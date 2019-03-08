@@ -12,10 +12,6 @@
 // <script>
 // 		var myMap = new Map(1280, 1024);
 // </script>
-// 
-// It's worth noting as well that, at the very least, you must have a <body> tag
-// defined in your html page.  The SVG will be automatically appended if one isn't
-// found.
 
 // Base class for drawing the Texas counties map.
 // Constructs the base map once constructed.
@@ -31,14 +27,9 @@ class Map
 		this.counties = {};
 		this.countiesMap = {};
 		this.countiesRead = false;
-		this.path = d3.geo.path();
-		this.mapSVG = d3.select("svg");
-		if (this.mapSVG == '')
-		{
-			this.mapSVG = d3.select("body").append("svg");
-		}
-
-		this.mapSVG.attr("width", svgWidth)
+		this.geoGenerator = d3.geoPath();
+		this.mapSVG = d3.select("body").append("svg")
+			.attr("width", svgWidth)
 			.attr("height", svgHeight);
 		
 		this.SetupProjection();
@@ -80,9 +71,9 @@ class Map
 	// 1000, so 2000 is a 2x zoom.
 	SetupProjection()
 	{
-		let projection = d3.geo.albersUsa()
-				.scale([2000]);
-		this.path = d3.geo.path()
+		let projection = d3.geoAlbersUsa()
+			.scale([2000]);
+		this.geoGenerator = d3.geoPath()
 			.projection(projection);
 	}
 	
@@ -102,27 +93,30 @@ class Map
 		// to begin with, circumventing the problem.
 		let sThis = this;
 		let sSVG = this.mapSVG;
-
-		d3.json("geojson/Counties.json", function(json) {
+		
+		d3.json("geojson/Counties.json").then(function(json) {
+			
 			// Record the counties data in two ways.  The first is just the core json data.
 			// This is passed to D3 for rendering.  The second is a map of county names
 			// paired with the feature element in the json.  This is so we can access
 			// data for specific counties more quickly when needed.
 			sThis.counties = json.features;
-
+			
+			console.log("Loaded data for " + sThis.counties.length + " counties.");
+			
 			// Record counties data in a map.
 			for (let i = 0; i < sThis.counties.length; i++)
 			{
 				let county = sThis.counties[i];
 				sThis.countiesMap[county.properties.COUNTY] = county;
 			}
-
+			
 			// Generate the paths.
 			sSVG.selectAll("path")
 				.data(sThis.counties)
 				.enter()
 				.append("path")
-				.attr("d", sThis.path)
+				.attr("d", sThis.geoGenerator)
 				.attr("fill", function(d) {
 					if (d.fill)
 					{
@@ -130,8 +124,16 @@ class Map
 					}
 					
 					return d3.rgb(0, 0, 0);
+				})
+				.on("mouseover", function(d){
+					d.fill = d3.rgb(Math.random() * 255, Math.random() * 255, Math.random() * 255);
+					sThis.RepaintCounties();
+				})
+				.on("mouseout", function(d){
+					d.fill = d3.rgb(0, 0, 0);
+					sThis.RepaintCounties();
 				});
-				sThis.countiesRead = true;
+			sThis.countiesRead = true;
 
 			// Done loading, fire the loading callback.
 			sThis.OnCountiesLoaded();
@@ -143,10 +145,6 @@ class Map
 	// having all of it's county data ready should go here.
 	OnCountiesLoaded()
 	{
-		// This is currently just test code for accessing/redrawing county data.
-		console.log("Testing data reloading...");
-		this.GetCounty("Tarrant County").fill = d3.rgb(40, 40, 235);
-		this.RepaintCounties();
 	}
 
 	// Refreshes data drawn in the counties and repaints the map.
@@ -156,7 +154,7 @@ class Map
 	{
 		this.mapSVG.selectAll("path")
 			.data(this.counties)
-			.attr("d", this.path)
+			.attr("d", this.geoGenerator)
 			.attr("fill", function(d) {
 				if (d.fill)
 				{
