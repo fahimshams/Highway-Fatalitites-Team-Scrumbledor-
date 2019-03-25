@@ -24,31 +24,32 @@ class Map
 	constructor(svgWidth, svgHeight)
 	{
 		// Setup member variables
-		this.counties = {};
-		this.countiesMap = {};
 		this.countiesRead = false;
 		this.geoGenerator = d3.geoPath();
-		this.mapSVG = d3.select("body").append("svg")
-			.attr("width", svgWidth)
-			.attr("height", svgHeight);
-		
+		this.dragController = d3.drag();
+		this.svgWidth = svgWidth;
+		this.svgHeight = svgHeight;
+		let body = d3.select("body");
+		this.mapSVG = this.AppendSVGToElement(body);
+		this.segmentSVGs = []; // These will be populated alongside county data.
+		this.dirtySegments = []; // booleans paired to segmentSVGs
 		this.SetupProjection();
 
 		// Functional setup.
 		this.SetupCounties();
 	}
 
-	// Returns the raw counties object detailing
-	// county data.
-	get Counties()
-	{
-		return this.counties;
-	}
-
 	// Returns the SVG element used for this map.
 	get SVG()
 	{
 		return this.mapSVG;
+	}
+
+	AppendSVGToElement(element)
+	{
+		return element.append("svg")
+			.attr("width", this.svgWidth)
+			.attr("height", this.svgHeight);
 	}
 
 	// Gets a county by name.  If that county cannot be found in the
@@ -76,6 +77,12 @@ class Map
 		this.geoGenerator = d3.geoPath()
 			.projection(projection);
 	}
+
+	ModifySVGSegment(index, data, key, value)
+	{
+		data[key] = value;
+		this.dirtySegments[index] = true;
+	}
 	
 	// Parses the county data via d3 callbacks and generates the path
 	// elements for the svg.  Once this is called, the map will begin
@@ -83,40 +90,31 @@ class Map
 	// Calls OnCountiesLoaded once loading is complete.
 	SetupCounties()
 	{
-		// 'this' is used in javascript to refer to the instance of
-		// a particular class a function is currently acting on.
-		// The 'this' value isn't passed correctly in callbacks, so when
-		// d3.json gives us a callback later, we lose our 'this' reference,
-		// and all of our member variables with it.
-		// By declaring scoped versions of these variables here, the callback
-		// can reference the same 'this' that was used to setup the callback
-		// to begin with, circumventing the problem.
-		let sThis = this;
-		let sSVG = this.mapSVG;
+		// Record the counties data in two ways.  The first is just the core json data.
+		// This is passed to D3 for rendering.  The second is a map of county names
+		// paired with the feature element in the json.  This is so we can access
+		// data for specific counties more quickly when needed.
+		console.log("Loading data for " + GeoData.Instance.Features.length + " counties.");
 		
-		d3.json("geojson/Counties.json").then(function(json) {
-			
-			// Record the counties data in two ways.  The first is just the core json data.
-			// This is passed to D3 for rendering.  The second is a map of county names
-			// paired with the feature element in the json.  This is so we can access
-			// data for specific counties more quickly when needed.
-			sThis.counties = json.features;
-			
-			console.log("Loaded data for " + sThis.counties.length + " counties.");
-			
-			// Record counties data in a map.
-			for (let i = 0; i < sThis.counties.length; i++)
+		// Cache local 'this' so it can be used in callback functions.
+		let sThis = this;
+
+		// Generate the paths.
+		for (let i = 0; i < GeoData.Instance.SegmentedData.length; i++)
+		{
+			let segment = GeoData.Instance.SegmentedData[i];
+			if (this.segmentSVGs.length <= i)
 			{
-				let county = sThis.counties[i];
-				sThis.countiesMap[county.properties.COUNTY] = county;
+				this.segmentSVGs.push(this.AppendSVGToElement(this.mapSVG));
+				this.dirtySegments.push(false);
 			}
-			
-			// Generate the paths.
-			sSVG.selectAll("path")
-				.data(sThis.counties)
+
+			let svg = this.segmentSVGs[i];
+			svg.selectAll("path")
+				.data(segment)
 				.enter()
 				.append("path")
-				.attr("d", sThis.geoGenerator)
+				.attr("d", this.geoGenerator)
 				.attr("fill", function(d) {
 					if (d.fill)
 					{
@@ -126,18 +124,21 @@ class Map
 					return d3.rgb(0, 0, 0);
 				})
 				.on("mouseover", function(d){
-					d.fill = d3.rgb(Math.random() * 255, Math.random() * 255, Math.random() * 255);
+					sThis.ModifySVGSegment(i, d, "fill", d3.rgb(Math.random() * 255, Math.random() * 255, Math.random() * 255));
 					sThis.RepaintCounties();
 				})
 				.on("mouseout", function(d){
-					d.fill = d3.rgb(0, 0, 0);
+					sThis.ModifySVGSegment(i, d, "fill", d3.rgb(0, 0, 0));
 					sThis.RepaintCounties();
-				});
-			sThis.countiesRead = true;
+				})
+				.on("dragstart", function(d){
+					console.log("drag");
+				})
+		}
+		this.countiesRead = true;
 
-			// Done loading, fire the loading callback.
-			sThis.OnCountiesLoaded();
-		});
+		// Done loading, fire the loading callback.
+		this.OnCountiesLoaded();
 	}
 
 	// Callback for when county data has finished loading.
@@ -152,16 +153,31 @@ class Map
 	// in a way that affects what the map looks like.
 	RepaintCounties()
 	{
-		this.mapSVG.selectAll("path")
-			.data(this.counties)
-			.attr("d", this.geoGenerator)
-			.attr("fill", function(d) {
-				if (d.fill)
-				{
-					return d.fill;
-				}
-				
-				return d3.rgb(0, 0, 0);
-			});
+		for (let i = 0; i < GeoData.Instance.SegmentedData.length; i++)
+		{
+			if (!this.dirtySegments[i])
+			{
+				continue;
+			}
+
+			let segment = GeoData.Instance.SegmentedData[i];
+			if (this.segmentSVGs.length <= i)
+			{
+				this.segmentSVGs.push(this.AppendSVGToElement(this.mapSVG));
+			}
+
+			let svg = this.segmentSVGs[i];
+			svg.selectAll("path")
+				.data(segment)
+				.attr("d", this.geoGenerator)
+				.attr("fill", function(d) {
+					if (d.fill)
+					{
+						return d.fill;
+					}
+					
+					return d3.rgb(0, 0, 0);
+				})
+		}
 	}
 }
