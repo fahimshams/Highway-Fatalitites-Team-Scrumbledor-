@@ -24,16 +24,28 @@ class Map
 	constructor(svgWidth, svgHeight)
 	{
 		// Setup member variables
-		this.countiesRead = false;
+		this.countiesMin = {
+			x: 99999,
+			y: 99999
+		};
+		this.countiesMax = {
+			x: -99999,
+			y: -99999
+		};
+		
+		this.minScrollBorder = 100; // No matter how far you scroll, this many map pixels will always be visible.
 		this.geoGenerator = d3.geoPath();
-		this.dragController = d3.drag();
 		this.svgWidth = svgWidth;
 		this.svgHeight = svgHeight;
+		
 		let body = d3.select("body");
 		this.mapSVG = this.AppendSVGToElement(body);
+		this.bgGroup = this.mapSVG.append("g");
+		this.mapGroup = this.mapSVG.append("g");
 		this.segmentSVGs = []; // These will be populated alongside county data.
 		this.dirtySegments = []; // booleans paired to segmentSVGs
 		this.SetupProjection();
+		this.CalculateMapBounds();
 
 		// Functional setup.
 		this.SetupCounties();
@@ -43,6 +55,23 @@ class Map
 	get SVG()
 	{
 		return this.mapSVG;
+	}
+
+	// Calculates the pixel bounds of the map based on our projection's zoom level.
+	// Used to control pan extents later.
+	CalculateMapBounds()
+	{
+		for (let i = 0; i < GeoData.Instance.Features.length; i++)
+		{
+			let feature = GeoData.Instance.Features[i];
+			let bounds = this.geoGenerator.bounds(feature);
+
+			this.countiesMin.x = Math.min(this.countiesMin.x, bounds[0][0]);
+			this.countiesMax.x = Math.max(this.countiesMax.x, bounds[1][0]);
+
+			this.countiesMin.y = Math.min(this.countiesMin.y, bounds[0][1]);
+			this.countiesMax.y = Math.max(this.countiesMax.y, bounds[1][1]);
+		}
 	}
 
 	AppendSVGToElement(element)
@@ -73,7 +102,7 @@ class Map
 	SetupProjection()
 	{
 		let projection = d3.geoAlbersUsa()
-			.scale([2000]);
+			.scale([1000]);
 		this.geoGenerator = d3.geoPath()
 			.projection(projection);
 	}
@@ -99,13 +128,25 @@ class Map
 		// Cache local 'this' so it can be used in callback functions.
 		let sThis = this;
 
+		// Probably temporary, but this rect is added to the layer behind the map
+		// to give a visual indicator of where the bounds of the svg element are.
+		// Pan bounds feel incredibly arbitrary without this visual.
+		let visualizationRect = this.bgGroup.append("rect")
+			.attr("x", 0)
+			.attr("y", 0)
+			.attr("width", this.svgWidth)
+			.attr("height", this.svgHeight)
+			.style("stroke", 'black')
+			.style("stroke-width", 4)
+			.style("opacity", 0.1);
+
 		// Generate the paths.
 		for (let i = 0; i < GeoData.Instance.SegmentedData.length; i++)
 		{
 			let segment = GeoData.Instance.SegmentedData[i];
 			if (this.segmentSVGs.length <= i)
 			{
-				this.segmentSVGs.push(this.AppendSVGToElement(this.mapSVG));
+				this.segmentSVGs.push(this.AppendSVGToElement(this.mapGroup));
 				this.dirtySegments.push(false);
 			}
 
@@ -133,12 +174,38 @@ class Map
 				})
 				.on("dragstart", function(d){
 					console.log("drag");
-				})
+				});
 		}
-		this.countiesRead = true;
+
+		// the zoom callback uses a lambda function to call HandleTransform so we
+		// can get the correct 'this' into the HandleTransform call.
+		this.mapSVG.call(d3.zoom()
+							.scaleExtent([1, 10])
+							.on("zoom", function(d) {
+									sThis.HandleTransform();
+								}));
 
 		// Done loading, fire the loading callback.
 		this.OnCountiesLoaded();
+	}
+
+	// Handles transform (translation and scale) for the map when the user
+	// pans or zooms.  Zoom extents are managed by the zoom definition, but
+	// the translation extents available in d3 are finicky at best and don't
+	// provide as much control as I would like, so those are managed
+	// internall in this function instead.
+	HandleTransform()
+	{
+		let t = d3.event.transform;
+
+		// For some reason, t.k is the current scale value.
+		t.x = Math.max(t.x, (-this.countiesMax.x * t.k) + this.minScrollBorder);
+		t.y = Math.max(t.y, (-this.countiesMax.y * t.k) + this.minScrollBorder);
+		
+		t.x = Math.min(t.x, this.svgWidth - (this.countiesMin.x * t.k) - this.minScrollBorder);
+		t.y = Math.min(t.y, this.svgHeight - (this.countiesMin.y * t.k) - this.minScrollBorder);
+		
+		this.mapGroup.attr("transform", t);
 	}
 
 	// Callback for when county data has finished loading.
@@ -163,7 +230,7 @@ class Map
 			let segment = GeoData.Instance.SegmentedData[i];
 			if (this.segmentSVGs.length <= i)
 			{
-				this.segmentSVGs.push(this.AppendSVGToElement(this.mapSVG));
+				this.segmentSVGs.push(this.AppendSVGToElement(this.mapGroup));
 			}
 
 			let svg = this.segmentSVGs[i];
