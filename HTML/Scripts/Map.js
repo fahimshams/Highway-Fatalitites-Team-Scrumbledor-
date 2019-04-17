@@ -1,26 +1,13 @@
 'use strict';
 
-// To use this file, add a script src tag to the html page that references
-// it and then construct a new map with the dimensions you want to use
-// (I used 1280 by 1024 for testing).
-// Ex:
-// If your file structure has Index.html at the top level and this file in
-// a folder named 'Scripts' in the same folder as Index.html, you would do this
-// in Index.html:
-// 
-// <script src="Scripts/Map.js"></script>
-// <script>
-// 		var myMap = new Map(1280, 1024);
-// </script>
+// For an example of usage of this class, see MapExample.html under the HTML folder.
 
 // Base class for drawing the Texas counties map.
 // Constructs the base map once constructed.
 class Map
 {
-	// Constructs a new map with an SVG element of the size specified.
-	// Note that, right now, this will use the first SVG element it can find
-	// in the main page.  If none is found, a new one will be appended
-	// to the body tag.  If no body is found, this will fail.
+	// Constructs a new map using the passed SVG element. It is assumed that
+	// the passed SVG element is attached to the passed div.
 	constructor(mapSVG, div)
 	{
 		this.div = div;
