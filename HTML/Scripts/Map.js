@@ -21,8 +21,10 @@ class Map
 	// Note that, right now, this will use the first SVG element it can find
 	// in the main page.  If none is found, a new one will be appended
 	// to the body tag.  If no body is found, this will fail.
-	constructor(svgWidth, svgHeight)
+	constructor(mapSVG, div)
 	{
+		this.div = div;
+
 		// Setup member variables
 		this.countiesMin = {
 			x: 99999,
@@ -35,20 +37,50 @@ class Map
 		
 		this.minScrollBorder = 100; // No matter how far you scroll, this many map pixels will always be visible.
 		this.geoGenerator = d3.geoPath();
-		this.svgWidth = svgWidth;
-		this.svgHeight = svgHeight;
+		this.svgWidth = this.div.clientWidth;
+		this.svgHeight = this.div.clientHeight;
 		
-		let body = d3.select("body");
-		this.mapSVG = this.AppendSVGToElement(body);
+		this.mapSVG = mapSVG;
 		this.bgGroup = this.mapSVG.append("g");
 		this.mapGroup = this.mapSVG.append("g");
 		this.segmentSVGs = []; // These will be populated alongside county data.
 		this.dirtySegments = []; // booleans paired to segmentSVGs
+		this.visualizationRect = null;
+		this.savedTransform = null;
+		this.baseTranslation = {
+			x: 0,
+			y: 0
+		};
 		this.SetupProjection();
 		this.CalculateMapBounds();
+		this.CenterMap();
 
 		// Functional setup.
 		this.SetupCounties();
+
+		EventSystem.Instance.AddListener("OnWindowResize", this, this.HandleResize);
+	}
+
+	// Callback for handling resize events fired from the main page.
+	HandleResize()
+	{
+		console.log("Handling resize");
+		this.svgWidth = this.div.clientWidth;
+		this.svgHeight = this.div.clientHeight;
+
+		this.visualizationRect
+			.attr("width", this.svgWidth)
+			.attr("height", this.svgHeight)
+
+		// If the transform has changed from dragging or zooming, maintain the
+		// correct positioning.  If it's null, it hasn't been changed and doesn't
+		// need to be maintained.
+		if (this.savedTransform != null)
+		{
+			let t = this.savedTransform;
+			this.mapGroup.attr("transform", this.ClipTransformToViewSpace(t));
+			this.savedTransform = t;
+		}
 	}
 
 	// Returns the SVG element used for this map.
@@ -74,11 +106,57 @@ class Map
 		}
 	}
 
-	AppendSVGToElement(element)
+	// Centers the map of texas in the main svg.
+	// Also records base translation values that are fed to the d3 zoom
+	// handler later when the counties are set up.
+	CenterMap()
 	{
+		let countiesXCenter = (this.countiesMax.x - this.countiesMin.x) / 2.0;
+		let countiesYCenter = (this.countiesMax.y - this.countiesMin.y) / 2.0;
+
+		let svgXCenter = (this.svgWidth) / 2.0;
+		let svgYCenter = (this.svgHeight) / 2.0;
+
+		let xTranslate = svgXCenter - this.countiesMin.x - countiesXCenter;
+		let yTranslate = svgYCenter - this.countiesMin.y - countiesYCenter;
+
+		this.mapGroup.attr("transform", "translate(" + xTranslate + "," + yTranslate + ")");
+		this.baseTranslation.x = xTranslate;
+		this.baseTranslation.y = yTranslate;
+	}
+
+	// overrides are kludges to fix a weird issue we're getting where
+	// the bottom of the map is cut off when the page loads on certain
+	// resolutions.  Seems to be happening because the svg for the map
+	// isn't centered on the map itself, so part of the map is drawing
+	// off of the svg.
+	AppendSVGToElement(element, overrideWidth, overrideHeight)
+	{
+		if (overrideWidth == null)
+		{
+			overrideWidth = this.svgWidth;
+		}
+
+		if (overrideHeight == null)
+		{
+			overrideHeight = this.svgHeight;
+		}
+
 		return element.append("svg")
-			.attr("width", this.svgWidth)
-			.attr("height", this.svgHeight);
+			.attr("width", overrideWidth)
+			.attr("height", overrideHeight);
+	}
+
+	// Takes a transform and clips it's translation to the svg's viewing space.
+	ClipTransformToViewSpace(t)
+	{
+		// For some reason, t.k is the current scale value.
+		t.x = Math.max(t.x, (-this.countiesMax.x * t.k) + this.minScrollBorder);
+		t.y = Math.max(t.y, (-this.countiesMax.y * t.k) + this.minScrollBorder);
+		
+		t.x = Math.min(t.x, this.svgWidth - (this.countiesMin.x * t.k) - this.minScrollBorder);
+		t.y = Math.min(t.y, this.svgHeight - (this.countiesMin.y * t.k) - this.minScrollBorder);
+		return t;
 	}
 
 	// Gets a county by name.  If that county cannot be found in the
@@ -131,7 +209,7 @@ class Map
 		// Probably temporary, but this rect is added to the layer behind the map
 		// to give a visual indicator of where the bounds of the svg element are.
 		// Pan bounds feel incredibly arbitrary without this visual.
-		let visualizationRect = this.bgGroup.append("rect")
+		this.visualizationRect = this.bgGroup.append("rect")
 			.attr("x", 0)
 			.attr("y", 0)
 			.attr("width", this.svgWidth)
@@ -146,7 +224,7 @@ class Map
 			let segment = GeoData.Instance.SegmentedData[i];
 			if (this.segmentSVGs.length <= i)
 			{
-				this.segmentSVGs.push(this.AppendSVGToElement(this.mapGroup));
+				this.segmentSVGs.push(this.AppendSVGToElement(this.mapGroup, 2048, 2048));
 				this.dirtySegments.push(false);
 			}
 
@@ -172,18 +250,17 @@ class Map
 					sThis.ModifySVGSegment(i, d, "fill", d3.rgb(0, 0, 0));
 					sThis.RepaintCounties();
 				})
-				.on("dragstart", function(d){
-					console.log("drag");
-				});
 		}
 
 		// the zoom callback uses a lambda function to call HandleTransform so we
 		// can get the correct 'this' into the HandleTransform call.
-		this.mapSVG.call(d3.zoom()
+		let zoomHandler = d3.zoom().on("zoom", function(d) {
+			sThis.HandleTransform();
+		});
+		this.mapSVG.call(zoomHandler
 							.scaleExtent([1, 10])
-							.on("zoom", function(d) {
-									sThis.HandleTransform();
-								}));
+							)
+					.call(zoomHandler.transform, d3.zoomIdentity.translate(this.baseTranslation.x,this.baseTranslation.y));
 
 		// Done loading, fire the loading callback.
 		this.OnCountiesLoaded();
@@ -197,15 +274,16 @@ class Map
 	HandleTransform()
 	{
 		let t = d3.event.transform;
+		this.mapGroup.attr("transform", this.ClipTransformToViewSpace(t));
 
-		// For some reason, t.k is the current scale value.
-		t.x = Math.max(t.x, (-this.countiesMax.x * t.k) + this.minScrollBorder);
-		t.y = Math.max(t.y, (-this.countiesMax.y * t.k) + this.minScrollBorder);
-		
-		t.x = Math.min(t.x, this.svgWidth - (this.countiesMin.x * t.k) - this.minScrollBorder);
-		t.y = Math.min(t.y, this.svgHeight - (this.countiesMin.y * t.k) - this.minScrollBorder);
-		
-		this.mapGroup.attr("transform", t);
+		// Transform is saved off once it has been altered.  For some reason,
+		// the function that allows users to query transform data from svg group
+		// elements was removed in this version of d3 and no other function was
+		// introduced to replace it.  As a result, we just save away the changes
+		// manually.
+		// This value will be null until the user drags or zooms the map for the
+		// first time.
+		this.savedTransform = t;
 	}
 
 	// Callback for when county data has finished loading.
@@ -235,8 +313,6 @@ class Map
 
 			let svg = this.segmentSVGs[i];
 			svg.selectAll("path")
-				.data(segment)
-				.attr("d", this.geoGenerator)
 				.attr("fill", function(d) {
 					if (d.fill)
 					{
