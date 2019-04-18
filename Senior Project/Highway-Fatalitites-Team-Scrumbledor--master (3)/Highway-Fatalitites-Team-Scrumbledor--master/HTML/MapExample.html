@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang = "en">
+  <meta charset="utf-8">
+  <title>County Map Example</title>
+  <style>
+    #window {
+      position: fixed;
+      right: 0px;
+      left: 0px;
+      top: 0px;
+      bottom: 0px;
+    }
+   
+    </style>
+  <body>
+    <div id="window"></div>
+    <!-- Need to figure out how to get this to load from a local file.
+      Also, this assumes that the html file is in a folder above the
+      Scripts folder, which contains the Maps class file.  -->
+    <script type="text/javascript" src="../d3/d3.js"></script>
+    <script src="Scripts/EventSystem.js"></script>
+    <script src="Scripts/GeoData.js"></script>
+    <script src="Scripts/Map.js"></script>
+    <script>
+      // Get the map's div and attach an SVG.
+      var mapDiv = document.getElementById("window");
+      var mapSVG = d3.select(mapDiv).append("svg");
+      
+      // Set SVG dimensions to match the div.
+      let mapW = mapDiv.clientWidth;
+			let mapH = mapDiv.clientHeight;
+      mapSVG.attr("width", mapW).attr("height", mapH);
+      
+      // Create the map.
+      var myMap = new Map(mapSVG, mapDiv);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang = "en">
+  <meta charset="utf-8">
+  <title>Highway Fatalities in Texas</title>
+  <style>
+	#topLeftDiv {
+		position: fixed;
+		width: 66%;
+		height: 66%;
+		left: 0px;
+		top: 0px;
+	}
+	#rightDiv {
+		position: fixed;
+		width: 34%;
+		height: 100%;
+		right: 0px;
+		top: 0px;
+	}
+	#bottomDiv {
+		position: fixed;
+		width: 66%;
+		height: 34%;
+		left: 0px;
+		bottom: 0px;
+	}
+  </style>
+  <body>
+	<div id="topLeftDiv"></div>
+	<div id="rightDiv"></div>
+	<div id="bottomDiv"></div>
+    <!-- Need to figure out how to get this to load from a local file.
+      Also, this assumes that the html file is in a folder above the
+      Scripts folder, which contains the Maps class file.  -->
+    <script type="text/javascript" src="../d3/d3.js"></script>
+    <script src="Scripts/EventSystem.js"></script>
+    <script src="Scripts/GeoData.js"></script>
+		<script src="Scripts/Map.js"></script>
+		<script src="../Graph/js/Graph.js"></script>
+    <script>
+		// Grab the divs for the various elements.
+		var mapDiv = document.getElementById("topLeftDiv");
+		var filtersDiv = document.getElementById("rightDiv");
+		var graphDiv = document.getElementById("bottomDiv");
+
+		// Generate SVGs for each of the systems to use for their graphics.
+	  	var mapSVG = d3.select(mapDiv).append("svg");
+	  	var filtersSVG = d3.select(filtersDiv).append("svg");
+	  	var graphSVG = d3.select(graphDiv).append("svg");
+		
+		// The following two rects are strictly for debugging purposes to show
+		// that the correct areas are being alotted.  As we introduce different
+		// systems into the main page, the matching rect will be removed.
+		var filtersRect = filtersSVG.append("rect").attr("width", 2000).attr("height", 2000)
+			.attr("fill", "green");
+	//	var graphRect = graphSVG.append("rect").attr("width", 2000).attr("height", 2000)
+	//		.attr("fill", "blue");
+
+		// Callback that is called whenever the window is resized.  Manages the sizes
+		// of the system SVGs and raises an event that systems can hook into to
+		// allow them to adjust internally if needed to the change in window dimensions.
+	  	function Repaint()
+	  	{
+			// Manage map SVG dimensions...
+			let mapW = mapDiv.clientWidth;
+			let mapH = mapDiv.clientHeight;
+			mapSVG.attr("width", mapW).attr("height", mapH);
+
+			// Manage filter SVG dimensions...
+			let filtersW = filtersDiv.clientWidth;
+			let filtersH = filtersDiv.clientHeight;
+			filtersSVG.attr("width", filtersW).attr("height", filtersH);
+
+			// Manage graph SVG dimensions...
+			let graphW = graphDiv.clientWidth;
+			let graphH = graphDiv.clientHeight;
+			graphSVG.attr("width", graphW).attr("height", graphH);
+
+			// Raise an event notifying other systems that the window has been resized.
+			EventSystem.Instance.RaiseEvent("OnWindowResize");
+	  	}
+
+		// Create various system objects as necessary.
+		let countyMap = new Map(mapSVG, mapDiv);
+		let graph = new Graph(graphSVG, graphDiv);
+
+		// Set initial dimensions.
+		Repaint();
+
+		// Subscribe to the window resize event listener.
+		window.addEventListener("resize", Repaint);
+    </script>
+  </body>
+</html>
