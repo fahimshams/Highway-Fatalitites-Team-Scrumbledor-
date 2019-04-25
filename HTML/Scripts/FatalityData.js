@@ -91,17 +91,30 @@ var FatalityData = (function()
 			}
 		}
 
+		// data is an entry in the this.fullData object.
+		// It has the following properties: FATALS, COUNTY, DAY, MONTH, YEAR,
+		// DAY_WEEK, HOUR, MINUTE
 		CheckDataAgainstFilter(data, filter)
 		{
-			// TODO: Fill in filtering later.
-			// Check days.  If one matches, pass this filter.
+			//TODO: Complete filtering.
+			// Filtering will happen in phases.  Right now, only the day phase is 
+			// implemented.  After all filters have passed, we pass back the result
+			// on success.  If any filter fails at any point, a failure is
+			// immediately returned.
+
+			// Check days.  If one matches, pass this part of the filter.
 			let days = filter.Days;
 			let dayPass = false;
 			for (let i = 0; i < days.length; i++)
 			{
+				// Extract useful information into locals.
 				let dayData = days[i];
 				let label = dayData.label;
 				let active = dayData.active;
+
+				// Data in the database files is stored as integers,
+				// so to compare those to the filters, the string must be
+				// converted into an integer.  This is stored in labelID.
 				let labelID = this.GetIDForWeekDay(label);
 				if (!active)
 				{
@@ -119,9 +132,10 @@ var FatalityData = (function()
 
 				// This day is being checked.  If this is the correct day for this
 				// accident, pass the day check and move on.
-
-				if (data.DAY_WEEK == labelID && active)
+				if (data.DAY_WEEK == labelID)
 				{
+					// This accident happened on the correct day for this filter.
+					// Pass the day check and move on.
 					dayPass = true;
 					break;
 				}
