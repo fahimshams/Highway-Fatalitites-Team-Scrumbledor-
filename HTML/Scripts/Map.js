@@ -32,6 +32,7 @@ class Map
 		this.mapGroup = this.mapSVG.append("g");
 		this.segmentSVGs = []; // These will be populated alongside county data.
 		this.dirtySegments = []; // booleans paired to segmentSVGs
+		this.allDirty = false;
 		this.visualizationRect = null;
 		this.savedTransform = null;
 		this.baseTranslation = {
@@ -51,7 +52,6 @@ class Map
 	// Callback for handling resize events fired from the main page.
 	HandleResize()
 	{
-		console.log("Handling resize");
 		this.svgWidth = this.div.clientWidth;
 		this.svgHeight = this.div.clientHeight;
 
@@ -205,6 +205,8 @@ class Map
 			.style("stroke-width", 4)
 			.style("opacity", 0.1);
 
+		let maxDeaths = FatalityData.Instance.MaxDeathsByCounty;
+
 		// Generate the paths.
 		for (let i = 0; i < GeoData.Instance.SegmentedData.length; i++)
 		{
@@ -215,6 +217,13 @@ class Map
 				this.dirtySegments.push(false);
 			}
 
+			// Insert fill data based on fatality information.
+			for (let j = 0; j < segment.length; j++)
+			{
+				let feature = segment[j];
+				this.CalculateFillForFeature(feature);
+			}
+
 			let svg = this.segmentSVGs[i];
 			svg.selectAll("path")
 				.data(segment)
@@ -222,21 +231,21 @@ class Map
 				.append("path")
 				.attr("d", this.geoGenerator)
 				.attr("fill", function(d) {
-					if (d.fill)
+					if (d.mapData.fill)
 					{
-						return d.fill;
+						return d3.rgb(d.mapData.fill * 255, 0, 0);
 					}
 					
 					return d3.rgb(0, 0, 0);
-				})
-				.on("mouseover", function(d){
-					sThis.ModifySVGSegment(i, d, "fill", d3.rgb(Math.random() * 255, Math.random() * 255, Math.random() * 255));
-					sThis.RepaintCounties();
-				})
-				.on("mouseout", function(d){
-					sThis.ModifySVGSegment(i, d, "fill", d3.rgb(0, 0, 0));
-					sThis.RepaintCounties();
-				})
+				});
+				//.on("mouseover", function(d){
+					//sThis.ModifySVGSegment(i, d, "fill", d3.rgb(Math.random() * 255, Math.random() * 255, Math.random() * 255));
+					//sThis.RepaintCounties();
+				//})
+				// .on("mouseout", function(d){
+				// 	sThis.ModifySVGSegment(i, d, "fill", d3.rgb(0, 0, 0));
+				// 	sThis.RepaintCounties();
+				// })
 		}
 
 		// the zoom callback uses a lambda function to call HandleTransform so we
@@ -249,8 +258,55 @@ class Map
 							)
 					.call(zoomHandler.transform, d3.zoomIdentity.translate(this.baseTranslation.x,this.baseTranslation.y));
 
-		// Done loading, fire the loading callback.
-		this.OnCountiesLoaded();
+		EventSystem.Instance.AddListener("OnFatalityDataUpdated", this, this.HandleFatalityDataUpdate);
+	}
+
+	HandleFatalityDataUpdate()
+	{
+		this.allDirty = true;
+		let features = GeoData.Instance.Features;
+		for (let i = 0; i < features.length; i++)
+		{
+			this.CalculateFillForFeature(features[i]);
+		}
+
+		this.RepaintCounties();
+	}
+
+	CalculateFillForFeature(feature)
+	{
+		if (feature.mapData == null)
+		{
+			feature.mapData = {};
+		}
+
+		let data = feature.fatalityData;
+		if (data == undefined)
+		{
+			feature.mapData.fill = 0.0;
+			return;
+		}
+		
+		let featureDeaths = feature.fatalityData.Deaths;
+		let upperBound = FatalityData.Instance.MaxDeathsByCounty;
+		if (upperBound > 150)
+		{
+			upperBound = 150; // Decreases contrast, making lower fatality areas more visible.
+		}
+		feature.mapData.fill = featureDeaths / upperBound;
+		feature.mapData.fill = this.CoerceFillValue(feature.mapData.fill);
+	}
+
+	// Takes a fill value between 0 and 1 and coerces it to be larger
+	// so that it is visible when displayed.
+	CoerceFillValue(fill)
+	{
+		fill = (fill + 0.15) * 1.25;
+		if (fill > 1)
+		{
+			fill = 1;
+		}
+		return fill;
 	}
 
 	// Handles transform (translation and scale) for the map when the user
@@ -273,13 +329,6 @@ class Map
 		this.savedTransform = t;
 	}
 
-	// Callback for when county data has finished loading.
-	// D3 json parsing is asynchronous, so anything that relies on the map
-	// having all of it's county data ready should go here.
-	OnCountiesLoaded()
-	{
-	}
-
 	// Refreshes data drawn in the counties and repaints the map.
 	// This should be called whenever the county data is changed 
 	// in a way that affects what the map looks like.
@@ -287,7 +336,7 @@ class Map
 	{
 		for (let i = 0; i < GeoData.Instance.SegmentedData.length; i++)
 		{
-			if (!this.dirtySegments[i])
+			if (!this.allDirty && !this.dirtySegments[i])
 			{
 				continue;
 			}
@@ -301,13 +350,17 @@ class Map
 			let svg = this.segmentSVGs[i];
 			svg.selectAll("path")
 				.attr("fill", function(d) {
-					if (d.fill)
+					if (d.mapData.fill)
 					{
-						return d.fill;
+						return d3.rgb(d.mapData.fill * 255, 0, 0);
 					}
 					
 					return d3.rgb(0, 0, 0);
 				})
+			
+			this.dirtySegments[i] = false;
 		}
+
+		this.allDirty = false;
 	}
 }
