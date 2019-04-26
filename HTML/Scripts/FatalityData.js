@@ -45,6 +45,7 @@ var FatalityData = (function()
 			this.activeData = [];
 			let yearMap = new Map();
 			let countyMap = new Map();
+			
 			for (let i = 0; i < this.fullData.length; i++)
 			{
 				let data = this.fullData[i];
@@ -128,6 +129,7 @@ var FatalityData = (function()
 				if (!active)
 				{
 					// This day isn't being displayed.
+					
 					if (data.DAY_WEEK == labelID)
 					{
 						// Match.  This does not meet the filter.
@@ -203,7 +205,7 @@ var FatalityData = (function()
 			this.dayToIDMap = new Map();
 			this.dayToIDMap.set("SUN", 1);
 			this.dayToIDMap.set("MON", 2);
-			this.dayToIDMap.set("TEU", 3);
+			this.dayToIDMap.set("TUE", 3);
 			this.dayToIDMap.set("WED", 4);
 			this.dayToIDMap.set("THUR", 5);
 			this.dayToIDMap.set("FRI", 6);
