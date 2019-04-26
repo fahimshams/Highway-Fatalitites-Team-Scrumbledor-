@@ -4,7 +4,7 @@
 
 // Base class for drawing the Texas counties map.
 // Constructs the base map once constructed.
-class Map
+class TexasMap
 {
 	// Constructs a new map using the passed SVG element. It is assumed that
 	// the passed SVG element is attached to the passed div.
@@ -47,6 +47,19 @@ class Map
 		this.SetupCounties();
 
 		EventSystem.Instance.AddListener("OnWindowResize", this, this.HandleResize);
+		EventSystem.Instance.AddListener("OnGeoFatalityDataUpdated", this, this.HandleFatalityDataUpdate);
+	}
+
+	HandleFatalityDataUpdate()
+	{
+		this.allDirty = true;
+		let features = GeoData.Instance.Features;
+		for (let i = 0; i < features.length; i++)
+		{
+			this.CalculateFillForFeature(features[i]);
+		}
+
+		this.RepaintCounties();
 	}
 
 	// Callback for handling resize events fired from the main page.
@@ -261,24 +274,14 @@ class Map
 		EventSystem.Instance.AddListener("OnFatalityDataUpdated", this, this.HandleFatalityDataUpdate);
 	}
 
-	HandleFatalityDataUpdate()
-	{
-		this.allDirty = true;
-		let features = GeoData.Instance.Features;
-		for (let i = 0; i < features.length; i++)
-		{
-			this.CalculateFillForFeature(features[i]);
-		}
-
-		this.RepaintCounties();
-	}
-
 	CalculateFillForFeature(feature)
 	{
 		if (feature.mapData == null)
 		{
 			feature.mapData = {};
 		}
+
+		feature.mapData.fill = 0.0;
 
 		let data = feature.fatalityData;
 		if (data == undefined)
