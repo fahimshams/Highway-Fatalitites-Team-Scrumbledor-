@@ -36,7 +36,8 @@
 		<script src="Scripts/EventSystem.js"></script>
 		<script src="Scripts/FatalityData.js"></script>
     <script src="Scripts/GeoData.js"></script>
-    <script src="Scripts/Map.js"></script>
+		<script src="Scripts/Map.js"></script>
+		<script src="Scripts/Graph.js"></script>
     <script>
 		// Grab the divs for the various elements.
 		var mapDiv = document.getElementById("topLeftDiv");
@@ -53,8 +54,6 @@
 		// systems into the main page, the matching rect will be removed.
 		var filtersRect = filtersSVG.append("rect").attr("width", 2000).attr("height", 2000)
 			.attr("fill", "green");
-		var graphRect = graphSVG.append("rect").attr("width", 2000).attr("height", 2000)
-			.attr("fill", "blue");
 
 		// Callback that is called whenever the window is resized.  Manages the sizes
 		// of the system SVGs and raises an event that systems can hook into to
@@ -82,6 +81,7 @@
 
 		// Create various system objects as necessary.
 		let countyMap = new Map(mapSVG, mapDiv);
+		let graph = new Graph(graphSVG, graphDiv);
 
 		// Set initial dimensions.
 		Repaint();
