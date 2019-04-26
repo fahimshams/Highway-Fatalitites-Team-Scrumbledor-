@@ -1,4 +1,3 @@
-
 // var rect = svg.append("rect")
 // .attr("x", 300)
 // .attr("y", 50)
@@ -99,7 +98,12 @@ class Filter
     buildDayGrid()
     {
     	// Generate the grid for the day buttons and inject day data.
-    	let gridData = this.generateGridData(1, 7, {x: 300, y: 60}, {width: 50, height: 50});
+      
+      let dim = {width: 50, height: 50};
+      let centerX = this.div.clientWidth / 2;
+      let boxWidth = 7 * dim.width;
+      let pos = {x: centerX - (boxWidth / 2), y: 60};
+    	let gridData = this.generateGridData(1, 7, pos, dim);
       let gridrow = gridData [0];
       for (let i = 0; i<7; i++){
           let entry = gridrow[i];
@@ -139,14 +143,15 @@ class Filter
               return d;
           })
           .enter().append("text")
-          .attr("x", function(d) {return d.x; })
+          .attr("x", function(d) {return d.x + (d.width / 2); })
           .attr("y", function(d) {return d.y + (d.height / 2) + 5; })
           .text(function(d) {
           	return d.day.label;
           })
+          .attr("text-anchor", "middle")
           .attr("font-family", "sans-serif")
-          .attr("font-size", "20px")
-          .attr("fill", "red")
+          .attr("font-size", "15px")
+          .attr("fill", "white")
 					.on('click', function(d){
             sThis.handleFilterChanges(d);
             sThis.setColorsForDayButtons();
