@@ -12,9 +12,13 @@ class Graph
 
     this.temperatures = [];
     this.dates = [];
-    this.margin = {top: 0, right: 0, bottom: -20, left: 20};
-    this.width = 600 - this.margin.left - this.margin.right;
-    this.height = 400 - this.margin.top - this.margin.bottom;
+    this.margin = {top: 100, right: 0, bottom: 5, left: 20};
+    //this.width = 600 - this.margin.left - this.margin.right;
+    //this.height = 400 - this.margin.top - this.margin.bottom;
+    this.heightScalar = 1;
+    this.xAxisHeight = 20;
+    this.width = this.div.clientWidth - this.margin.left - this.margin.right;
+    this.height = this.div.clientHeight - this.margin.top - this.margin.bottom;
     this.tooltip = d3.select("body")//Mouse over transition
                 .append('div')
                 .style('position', 'absolute')
@@ -31,6 +35,7 @@ class Graph
     this.xAxisValue = null;
     this.xAxisTicks = null;
     this.yAxisTicks = null;
+    this.filteredCounty = "";
 
     let d = this.GetTempForecastData();
     //d3.json('../Graph/js/data/forecast.json', function(d){
@@ -39,7 +44,24 @@ class Graph
       this.InitializeScales();
       this.InitializeGraph();
    // })
-    EventSystem.Instance.AddListener("OnWindowResize", this, this.HandleResize);
+    //EventSystem.Instance.AddListener("OnWindowResize", this, this.HandleResize);
+    //Calling the listener function from the event system for a particular event
+    EventSystem.Instance.AddListener("OnCountyClicked", this, this.CountyClickedCallback);
+  }
+
+  CountyClickedCallback(args)
+  {
+    console.log("Graph saw a selection for county: " + args.County);
+    this.filteredCounty = args.County;
+    for (let i = 0; i < GeoData.Instance.FatalityData.length; i++)
+    {
+
+    }
+  }
+
+  GetXAxisHeight()
+  {
+    return this.xAxisHeight + this.margin.bottom;
   }
 
   TempParseJSONData(d)
@@ -60,7 +82,7 @@ class Graph
   {
     this.yScale
       .domain([0, d3.max(this.temperatures)])
-      .range([0, this.height]);
+      .range([0, (this.height * this.heightScalar) - this.GetXAxisHeight()]);
 
     this.xScale = d3.scaleBand()
       .domain(this.temperatures)
@@ -76,8 +98,8 @@ class Graph
 
     this.yAxisValue = d3.scaleLinear()
       .domain([0, d3.max(this.temperatures)])
-      .range([this.height, 0]);
-
+      .range([(this.height * this.heightScalar) - this.GetXAxisHeight(), 0]);
+      
     this.xAxisValue = d3.scaleTime()
       .domain([this.dates[0], this.dates[(this.dates.length-1)]])
       .range([0,this.width]);
@@ -99,13 +121,14 @@ class Graph
     let sThis = this;
     //d3.select('#viz').append('svg')
     this.graphSVG = this.mainSVG.append('svg');
+    console.log("3");
     this.graphSVG
       .attr('width', this.width +  this.margin.left + this.margin.right )
       .attr('height', this.height + this.margin.top - this.margin.bottom )
 
       .append('g')
       .attr('transform', 
-            'translate('+ this.margin.left +',' + this.margin.right +')')
+            'translate('+ this.margin.left +',' + this.margin.top +')')
   
       .selectAll('rect').data(this.temperatures)
         .enter().append('rect')
@@ -124,7 +147,7 @@ class Graph
         })
 
         .attr('y', function(d) {
-          return sThis.height - sThis.yScale(d);
+          return sThis.height - sThis.GetXAxisHeight() - sThis.yScale(d);
       
 
       }).on('mouseover', function(d){ //Mouseover transition
@@ -144,15 +167,19 @@ class Graph
           .style('top', (d3.event.pageY)+"px");
           d3.select(this).style('opacity', 1);
       });
-
+ 
+      // this.graphSVG.append("rect")
+      //   .attr('width', this.width +  this.margin.left + this.margin.right )
+      //   .attr('height', this.height + this.margin.top - this.margin.bottom )
+      //   .attr("fill", "red");
       yGuide = this.graphSVG
               .append('g')
-              .attr('transform', 'translate(20,0)' )
+              .attr('transform', 'translate(20,' + this.margin.top + ')' )
               .call(this.yAxisTicks);
 
       xGuide =this.graphSVG
               .append('g')
-              .attr('transform', 'translate(20, '+ this.height + ')' )
+              .attr('transform', 'translate(20, ' + (this.height - this.GetXAxisHeight() + this.margin.top)  + ')' )
               .call(this.xAxisTicks);
 
                 
@@ -187,6 +214,7 @@ class Graph
       ...
     },
     fatalityData:{ 
+
     }
   }
 ]
