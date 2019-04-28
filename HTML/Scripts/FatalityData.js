@@ -40,8 +40,7 @@ var FatalityData = (function()
 
 		ApplyFilter(filter, useFilter = true)
 		{
-			this.maxDeathsByYear = 0;
-			this.maxDeathsByCounty = 0;
+			let maxDeathsParsed = (this.maxDeathsByCounty != 0);
 			this.activeData = [];
 			let yearMap = new Map();
 			let countyMap = new Map();
@@ -57,7 +56,7 @@ var FatalityData = (function()
 					if (yearData == undefined)
 					{
 						yearMap.set(data.YEAR, data.FATALS);
-						if (data.FATALS > this.maxDeathsByYear)
+						if (!maxDeathsParsed && data.FATALS > this.maxDeathsByYear)
 						{
 							this.maxDeathsByYear = data.FATALS;
 						}
@@ -67,19 +66,17 @@ var FatalityData = (function()
 						let newFatals = yearData + data.FATALS;
 						yearMap.set(data.YEAR, newFatals);
 
-						if (newFatals > this.maxDeathsByYear)
+						if (!maxDeathsParsed && newFatals > this.maxDeathsByYear)
 						{
 							this.maxDeathsByYear = newFatals;
 						}
 					}
 
 					let countyData = countyMap.get(data.COUNTY);
-					if (data.COUNTY == 201)
-					{}
 					if (countyData == undefined)
 					{
 						countyMap.set(data.COUNTY, data.FATALS);
-						if (data.FATALS > this.maxDeathsByCounty)
+						if (!maxDeathsParsed && data.FATALS > this.maxDeathsByCounty)
 						{
 							this.maxDeathsByCounty = data.FATALS;
 						}
@@ -89,7 +86,7 @@ var FatalityData = (function()
 						let newFatals = countyData + data.FATALS;
 						countyMap.set(data.COUNTY, newFatals);
 
-						if (newFatals > this.maxDeathsByCounty)
+						if (!maxDeathsParsed && newFatals > this.maxDeathsByCounty)
 						{
 							this.maxDeathsByCounty = newFatals;
 						}

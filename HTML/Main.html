@@ -9,6 +9,9 @@
 		height: 66%;
 		left: 0px;
 		top: 0px;
+    border-width: 4px;
+    border-style:outset;
+    box-sizing: border-box;
 	}
 	#rightDiv {
 		position: fixed;
@@ -16,6 +19,9 @@
 		height: 100%;
 		right: 0px;
 		top: 0px;
+    border-width: 2px;
+    border-style:solid;
+    box-sizing: border-box;
 	}
 	#bottomDiv {
 		position: fixed;
@@ -23,7 +29,25 @@
 		height: 34%;
 		left: 0px;
 		bottom: 0px;
+    border-width: 2px;
+    border-style:solid;
+    box-sizing: border-box;
 	}
+  div.mapToolTip {
+    inline-size: auto;
+    position: absolute;
+    text-align: center;
+    min-width: 10px;
+    max-width: 120px;
+    min-height: 10px;
+    max-height: 150px;
+    padding: 2px;
+    font: 12px sans-serif;
+    background: lightgreen;
+    border: 0px;
+    border-radius: 4px;
+    pointer-events: none;
+  }
   </style>
   <body>
 	<div id="topLeftDiv"></div>
@@ -50,8 +74,6 @@
 	  	var mapSVG = d3.select(mapDiv).append("svg");
 	  	var filtersSVG = d3.select(filtersDiv).append("svg");
 	  	var graphSVG = d3.select(graphDiv).append("svg");
-		
-      
 
       // Callback that is called whenever the window is resized.  Manages the sizes
       // of the system SVGs and raises an event that systems can hook into to

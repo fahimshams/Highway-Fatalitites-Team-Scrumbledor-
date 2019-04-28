@@ -22,6 +22,11 @@ class TexasMap
 			y: -99999
 		};
 		
+		this.toolTip = d3.select("body").append("div")
+			.attr("class", "mapToolTip")
+			.style("opacity", 0);
+		this.toolTipOffset = 10; // Offsets tooltip from mouse on x and y.
+		this.defaultZoom = 2;
 		this.minScrollBorder = 100; // No matter how far you scroll, this many map pixels will always be visible.
 		this.geoGenerator = d3.geoPath();
 		this.svgWidth = this.div.clientWidth;
@@ -180,7 +185,7 @@ class TexasMap
 	SetupProjection()
 	{
 		let projection = d3.geoAlbersUsa()
-			.scale([1000]);
+			.scale([this.defaultZoom * 1000]);
 		this.geoGenerator = d3.geoPath()
 			.projection(projection);
 	}
@@ -197,12 +202,6 @@ class TexasMap
 	// Calls OnCountiesLoaded once loading is complete.
 	SetupCounties()
 	{
-		// Record the counties data in two ways.  The first is just the core json data.
-		// This is passed to D3 for rendering.  The second is a map of county names
-		// paired with the feature element in the json.  This is so we can access
-		// data for specific counties more quickly when needed.
-		console.log("Loading data for " + GeoData.Instance.Features.length + " counties.");
-		
 		// Cache local 'this' so it can be used in callback functions.
 		let sThis = this;
 
@@ -217,9 +216,7 @@ class TexasMap
 			.style("stroke", 'black')
 			.style("stroke-width", 4)
 			.style("opacity", 0.1);
-
-		let maxDeaths = FatalityData.Instance.MaxDeathsByCounty;
-
+			
 		// Generate the paths.
 		for (let i = 0; i < GeoData.Instance.SegmentedData.length; i++)
 		{
@@ -250,15 +247,26 @@ class TexasMap
 					}
 					
 					return d3.rgb(0, 0, 0);
+				})
+				.on("mouseover", function(d) {
+					let tooltip = "<b>" + d.properties.COUNTY + "</b>";
+					if (d.fatalityData == null)
+					{
+						tooltip += "<br><br>No data available.";
+					}
+					else
+					{
+					tooltip += "<br><br>Fatalities: " + d.fatalityData.Deaths +
+						"\nAccidents: " + d.fatalityData.Accidents.length;
+					}
+					sThis.toolTip.transition().duration(200).style("opacity", .9);
+					sThis.toolTip.html(tooltip)
+						.style("left", (d3.event.pageX + sThis.toolTipOffset) + "px")
+						.style("top", (d3.event.pageY + sThis.toolTipOffset) + "px");
+				})
+				.on("mouseout", function(d) {
+					sThis.toolTip.transition().duration(400).style("opacity", 0);
 				});
-				//.on("mouseover", function(d){
-					//sThis.ModifySVGSegment(i, d, "fill", d3.rgb(Math.random() * 255, Math.random() * 255, Math.random() * 255));
-					//sThis.RepaintCounties();
-				//})
-				// .on("mouseout", function(d){
-				// 	sThis.ModifySVGSegment(i, d, "fill", d3.rgb(0, 0, 0));
-				// 	sThis.RepaintCounties();
-				// })
 		}
 
 		// the zoom callback uses a lambda function to call HandleTransform so we
@@ -292,10 +300,6 @@ class TexasMap
 		
 		let featureDeaths = feature.fatalityData.Deaths;
 		let upperBound = FatalityData.Instance.MaxDeathsByCounty;
-		if (upperBound > 150)
-		{
-			upperBound = 150; // Decreases contrast, making lower fatality areas more visible.
-		}
 		feature.mapData.fill = featureDeaths / upperBound;
 		feature.mapData.fill = this.CoerceFillValue(feature.mapData.fill);
 	}
@@ -304,11 +308,16 @@ class TexasMap
 	// so that it is visible when displayed.
 	CoerceFillValue(fill)
 	{
-		fill = (fill + 0.15) * 1.25;
-		if (fill > 1)
+		// If no fatalities, no fill.
+		if (fill == 0)
 		{
-			fill = 1;
+			return 0;
 		}
+
+		// Remap fill from 0-1 to 0.15-1
+		let minFill = 0.15;
+		fill = fill * (1.0 - minFill);
+		fill += minFill;
 		return fill;
 	}
 
