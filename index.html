@@ -1,29 +1,114 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Visualization</title>
-    <link href="css/bootstrap.min.css" rel="stylesheet">
-    <link href="css/styles.css" rel="stylesheet">
-    <link href="https://bost.ocks.org/mike/bar/3/">
-    
-
-      
-  </head>
+<html lang = "en">
+  <meta charset="utf-8">
+  <title>Highway Fatalities in Texas</title>
+  <style>
+	#topLeftDiv {
+		position: fixed;
+		width: 66%;
+		height: 66%;
+		left: 0px;
+		top: 0px;
+    border-width: 4px;
+    border-style:outset;
+    box-sizing: border-box;
+	}
+	#rightDiv {
+		position: fixed;
+		width: 34%;
+		height: 100%;
+		right: 0px;
+		top: 0px;
+    border-width: 2px;
+    border-style:solid;
+    box-sizing: border-box;
+	}
+	#bottomDiv {
+		position: fixed;
+		width: 66%;
+		height: 34%;
+		left: 0px;
+		bottom: 0px;
+    border-width: 2px;
+    border-style:solid;
+    box-sizing: border-box;
+	}
+  div.mapToolTip {
+    inline-size: auto;
+    position: absolute;
+    text-align: center;
+    min-width: 10px;
+    max-width: 120px;
+    min-height: 10px;
+    max-height: 150px;
+    padding: 2px;
+    font: 12px sans-serif;
+    background: lightgreen;
+    border: 0px;
+    border-radius: 4px;
+    pointer-events: none;
+  }
+  </style>
   <body>
+	<div id="topLeftDiv"></div>
+	<div id="rightDiv"></div>
+	<div id="bottomDiv"></div>
+    <!-- Need to figure out how to get this to load from a local file.
+      Also, this assumes that the html file is in a folder above the
+      Scripts folder, which contains the Maps class file.  -->
+    <script type="text/javascript" src="../d3/d3.js"></script>
+		<script src="Scripts/EventSystem.js"></script>
+		<script src="Scripts/FatalityData.js"></script>
+    <script src="Scripts/GeoData.js"></script>
+		<script src="Scripts/Map.js"></script>
+		<script src="Scripts/Graph.js"></script>
+    <script src="../pie/filter.js"></script>
+    
+    <script>
+      // Grab the divs for the various elements.
+      var mapDiv = document.getElementById("topLeftDiv");
+      var filtersDiv = document.getElementById("rightDiv");
+      var graphDiv = document.getElementById("bottomDiv");
 
-    <div class="container">
+      // Generate SVGs for each of the systems to use for their graphics.
+	  	var mapSVG = d3.select(mapDiv).append("svg");
+	  	var filtersSVG = d3.select(filtersDiv).append("svg");
+	  	var graphSVG = d3.select(graphDiv).append("svg");
 
-      <h2>Graph</h2>
+      // Callback that is called whenever the window is resized.  Manages the sizes
+      // of the system SVGs and raises an event that systems can hook into to
+      // allow them to adjust internally if needed to the change in window dimensions.
+	  	function Repaint()
+	  	{
+        // Manage map SVG dimensions...
+        let mapW = mapDiv.clientWidth;
+        let mapH = mapDiv.clientHeight;
+        mapSVG.attr("width", mapW).attr("height", mapH);
 
-      <div id="viz"></div>
+        // Manage filter SVG dimensions...
+        let filtersW = filtersDiv.clientWidth;
+        let filtersH = filtersDiv.clientHeight;
+        filtersSVG.attr("width", filtersW).attr("height", filtersH);
 
-    </div><!-- container -->
-    <script src="js/libraries/jquery/jquery.min.js"></script>
-    <script src="js/libraries/bootstrap/bootstrap.min.js"></script>
-    <script src="js/libraries/d3/d3.min.js"></script>
-    <script src="js/script.js"></script>
+        // Manage graph SVG dimensions...
+        let graphW = graphDiv.clientWidth;
+        let graphH = graphDiv.clientHeight;
+        graphSVG.attr("width", graphW).attr("height", graphH);
+
+        // Raise an event notifying other systems that the window has been resized.
+        EventSystem.Instance.RaiseEvent("OnWindowResize");
+	  	}
+
+      // Create various system objects as necessary.
+      let countyMap = new TexasMap(mapSVG, mapDiv);
+      let graph = new Graph(graphSVG, graphDiv);
+      let filter = new Filter(filtersSVG, filtersDiv);
+
+      // Set initial dimensions.
+      Repaint();
+
+      // Subscribe to the window resize event listener.
+      window.addEventListener("resize", Repaint);
+    </script>
   </body>
 </html>
