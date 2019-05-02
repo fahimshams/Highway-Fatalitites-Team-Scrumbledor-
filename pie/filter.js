@@ -37,6 +37,8 @@ class Filter
     {
     	this.svg = svg;
       this.div = div;
+      this.pieGroup = null;
+      
 			this.DaysArray = [
           {label: "MON" },
           {label: "TUE" },
@@ -45,21 +47,51 @@ class Filter
           {label: "FRI" },
           {label: "SAT" },
           {label: "SUN" },
-  			];
+        ];
+      
+      this.MonthsArray = [
+        {label: "JAN"},
+        {label: "FEB"},
+        {label: "MAR"},
+        {label: "APR"},
+        {label: "MAY"},
+        {label: "JUNE"},
+        {label: "JULY"},
+        {label: "AUG"},
+        {label: "SEP"},
+        {label: "OCT"},
+        {label: "NOV"},
+        {label: "DEC"},]
+
+      this.HoursArray = [
+        {label: "1", count: 1},
+        {label: "2", count: 1},
+        {label: "3", count: 1},
+        {label: "4", count: 1},
+        {label: "5", count: 1},
+        {label: "6", count: 1},
+        {label: "7", count: 1},
+        {label: "8", count: 1},
+        {label: "9", count: 1},
+        {label: "10", count: 1},
+        {label: "11", count: 1},
+        {label: "12", count: 1}
+          ];
+        
       this.Filter = {
-        //  Hours = [
-        //     {label: "01", active: true},
-        //     {label: "02", active: true},
-        //     {label: "03", active: true},
-        //     {label: "04", active: true},
-        //     {label: "05", active: true},
-        //     {label: "06", active: true},
-        //     {label: "07", active: true},
-        //     {label: "08", active: true},
-        //     {label: "09", active: true},
-        //     {label: "10", active: true},
-        //     {label: "11", active: true},
-        //     {label: "12", active: true},],
+         Hours : [
+            {label: "01", active: true},
+            {label: "02", active: true},
+            {label: "03", active: true},
+            {label: "04", active: true},
+            {label: "05", active: true},
+            {label: "06", active: true},
+            {label: "07", active: true},
+            {label: "08", active: true},
+            {label: "09", active: true},
+            {label: "10", active: true},
+            {label: "11", active: true},
+            {label: "12", active: true},],
 
         Days : [
             {label: "MON", active: true},
@@ -68,63 +100,199 @@ class Filter
             {label: "THUR", active: true},
             {label: "FRI", active: true},
             {label: "SAT", active: true},
-            {label: "SUN", active: true},]
+            {label: "SUN", active: true},],
 
-        // Months = [
-        //     {label: "JAN", active: true},
-        //     {label: "FEB", active: true},
-        //     {label: "MAR", active: true},
-        //     {label: "APR", active: true},
-        //     {label: "MAY", active: true},
-        //     {label: "JUNE", active: true},
-        //     {label: "JULY", active: true},
-        //     {label: "AUG", active: true},
-        //     {label: "SEP", active: true},
-        //     {label: "OCT", active: true},
-        //     {label: "NOV", active: true},
-        //     {label: "DEC", active: true},]
+        Months : [
+            {label: "JAN", active: true},
+            {label: "FEB", active: true},
+            {label: "MAR", active: true},
+            {label: "APR", active: true},
+            {label: "MAY", active: true},
+            {label: "JUNE", active: true},
+            {label: "JULY", active: true},
+            {label: "AUG", active: true},
+            {label: "SEP", active: true},
+            {label: "OCT", active: true},
+            {label: "NOV", active: true},
+            {label: "DEC", active: true},]
  			};
 			
+      this.HourButtons = null;
+      let drawHeight = this.buildHourPie();
       this.DayButtons = null;
-      this.buildDayGrid();
-      //this.buildMonthGrid();
+      drawHeight = this.buildDayGrid(drawHeight);
+      this.MonthButtons = null;
+      this.buildMonthGrid(drawHeight);
+      
+      
     }
     
-    buildMonthGrid()
+    buildMonthGrid(drawHeight)
     {
-    	let gridData = this.generateGridData(2, 6, {x: 200, y: 40}, {width: 25, height: 25});
+    	//let gridData = this.generateGridData(2, 6, {x: 200, y: 40}, {width: 25, height: 25});
+      let dim = {width: 50, height: 50};
+      let centerX = this.div.clientWidth / 2;
+      let boxWidth = 6 * dim.width;
+      let pos = {x: centerX - (boxWidth /2), y: drawHeight + 90};
+      let gridData = this.generateGridData(2, 6, pos, dim);
+     	// let gridrow = gridData [0];
+      for (let i = 0; i < 12; i++){
+          let data = gridData[i];
+          data.month = this.MonthsArray[i];
+        }
+
+      //Buttons for Months
+      let sThis = this;
+			let monthGroup = this.svg.append("g");
+      let column = monthGroup.selectAll(".square")
+        .data(gridData)
+        .enter().append("rect")
+        .attr("class", "square")
+        .attr("x", function(d) {return d.x; })
+        .attr("y", function(d) {return d.y; })
+        .attr("width", function(d) {return d.width;})
+        .attr("height", function(d) {return d.height;})
+        .style("fill", "green")
+        .style("stroke","#223")
+        .on('click', function (d){
+            sThis.handleMonthFilterChanges(d);
+            sThis.setColorsForMonthButtons();
+            EventSystem.Instance.RaiseEvent("OnFilterChange", sThis.Filter);
+        });
+
+      //TEXT for months
+      let text = monthGroup.selectAll(".labelText")
+        .data(gridData)
+        .enter().append("text")
+        .attr("class", "labelText")
+        .attr("x", function(d) {return d.x + (d.width / 2); })
+        .attr("y", function(d) {return d.y + (d.height / 2) + 5; })
+        .text(function(d) {
+          return d.month.label;
+         })
+        .attr("text-anchor", "middle")
+        .attr("font-family", "sans-serif")
+        .attr("font-size", "15px")
+        .attr("fill", "white")
+				.on('click', function(d){
+          sThis.handleMonthFilterChanges(d);
+          sThis.setColorsForMonthButtons();
+          EventSystem.Instance.RaiseEvent("OnFilterChange", sThis.Filter);
+        });
+
+        this.MonthButtons = monthGroup.selectAll("rect");
+
     }
     
-    buildDayGrid()
+    //edits the month filter on click
+    handleMonthFilterChanges(d){
+
+      let monthName = d.month.label;
+
+      //FIND the filter that was clicked on
+      let clickedFilter = null;
+      let numInactive = 0;
+      for(let i = 0; i < this.Filter.Months.length; i++)
+      {
+        let checkingFilter = this.Filter.Months[i];
+        
+        if ( checkingFilter.label === monthName)
+        {
+          clickedFilter = checkingFilter;
+        }
+
+        if (!checkingFilter.active)
+        {
+          numInactive ++;
+        }
+      }
+
+      //
+      for (let i = 0; i < this.Filter.Months.length; i++)
+      {
+        let checkingFilter = this.Filter.Months[i];
+        let filterActive = checkingFilter.active;
+
+        if (!filterActive)
+        {
+          clickedFilter.active = !clickedFilter.active;
+          if (!clickedFilter.active)
+          {
+            numInactive++;
+          }
+          break;
+        }
+      }
+
+      if (numInactive == 0) // All true, toggle everything off except the one we just clicked.
+      {
+        for (let i = 0; i < this.Filter.Months.length; i++)
+        {
+          let checkingFilter = this.Filter.Months[i];
+          if (checkingFilter.label != clickedFilter.label)
+          {
+            checkingFilter.active = false;
+          }
+        }
+      }
+      else if (numInactive == this.Filter.Months.length) // All off, toggle everything on.
+      {
+        for (let i = 0; i < this.Filter.Months.length; i++)
+        {
+          let checkingFilter = this.Filter.Months[i];
+          checkingFilter.active = true;
+        }
+      }
+    }
+
+    setColorsForMonthButtons()
+    {
+    	let sThis = this;
+    	this.MonthButtons.style("fill", function(d) {
+      	let label = d.month.label;
+        for (let i = 0; i < sThis.Filter.Months.length; i++)
+        {
+        	let checkingFilter = sThis.Filter.Months[i];
+          if (checkingFilter.label == label)
+          {
+          	if (checkingFilter.active)
+            {
+            	return "green";
+            }
+            else
+            {
+            	return "red";
+            }
+          }
+        }
+      });
+    }
+
+
+    buildDayGrid(drawHeight)
     {
     	// Generate the grid for the day buttons and inject day data.
-      
+      let topPadding = 60;
+      let bottomPadding = 20;
       let dim = {width: 50, height: 50};
       let centerX = this.div.clientWidth / 2;
       let boxWidth = 7 * dim.width;
-      let pos = {x: centerX - (boxWidth / 2), y: 60};
+      let pos = {x: centerX - (boxWidth / 2), y: drawHeight + topPadding};
     	let gridData = this.generateGridData(1, 7, pos, dim);
-      let gridrow = gridData [0];
       for (let i = 0; i<7; i++){
-          let entry = gridrow[i];
+          let entry = gridData[i];
           entry.day = this.DaysArray[i];
       }
 	
   		// Now we've got the grid's data, build the grid
-      let row = this.svg.selectAll(".row")
-          .data(gridData)
-          .enter().append("g")
-          .attr("class","row");
-       //
       let sThis = this;
         
-      // Buttons // 
-      let column = row.selectAll(".square")
-          .data(function(d){
-              return d;
-          })
+      // Buttons //
+      let dayGroup = this.svg.append("g");
+      let column = dayGroup.selectAll(".square")
+          .data(gridData)
           .enter().append("rect")
-          //.attr("class","square")
+          .attr("class","square")
           .attr("x", function(d) {return d.x; })
           .attr("y", function(d) {return d.y; })
           .attr("width",function(d) {return d.width;})
@@ -138,11 +306,10 @@ class Filter
         });
         
         // Text //
-      let text = row.selectAll(".square")
-          .data(function(d){
-              return d;
-          })
+      let text = dayGroup.selectAll(".labelText")
+          .data(gridData)
           .enter().append("text")
+          .attr("class", "labelText")
           .attr("x", function(d) {return d.x + (d.width / 2); })
           .attr("y", function(d) {return d.y + (d.height / 2) + 5; })
           .text(function(d) {
@@ -158,7 +325,9 @@ class Filter
             EventSystem.Instance.RaiseEvent("OnFilterChange", sThis.Filter);
         });
         
-        this.DayButtons = row.selectAll("rect");
+        this.DayButtons = dayGroup.selectAll("rect");
+        
+        return drawHeight + topPadding + dim.height + bottomPadding;
     }
     
     // Edits the day filter on click.
@@ -261,10 +430,8 @@ class Filter
       let click = 0;
 
       for (let row = 0; row< rowCount; row++){
-          data.push( new Array() );
-
           for (let column = 0; column< columnCount; column++){
-              data[row].push({
+              data.push({
                   x: xpos,
                   y: ypos,
                   width: width,
@@ -276,267 +443,51 @@ class Filter
               xpos += width; //imcrement the x pos
           }
 
-          xpos = 10;
+          xpos = pos.x;
           ypos += height;
       }
 
       return data;
   	}
     
+    buildHourPie()
+    {
+      //let svg = d3.select('#rightDiv')
+      //  .append('svg')
+      //  .attr('width', width)
+      //  .attr('height',height)
+      //  .append('g')
+      //  .attr('transform','translate(' + (width /2)+ ',' + (height / 2 ) + ')');
     
-}
-//////////////////////
-//// DAYS////////////
-/////////////////////
+    	let radius = 100;
+      let padding = 20;
+      
+    	this.pieGroup = this.svg.append('g')
+      	.attr('transform', 'translate(' + (this.div.clientWidth / 2) + ',' + (radius + padding) +')');
+    	
+      let arc = d3.arc()
+        .innerRadius(0)
+        .outerRadius(radius);
+
+      let pie = d3.pie()
+        .value(function(d) {return d.count;})
+        .sort(null);
+
+      let path = this.pieGroup.selectAll('path')
+        .data(pie(this.HoursArray))
+        .enter()
+        .append('path')
+        .attr('d', arc)
+        .attr('fill', function (d, i){ return d3.rgb(Math.random() * 255, 0, 0); });
+        
+    	return (padding * 2) + (radius * 2);
+    };
+
+    
 
 
-/*function gridMData(rowCount, columnCount){
-  var data = new Array();
-  var xpos = 200;
-  var ypos =40;
-  var width = 25;
-  var height = 25;
-  var click = 0;
-
-  for (var row = 0; row< rowCount; row++){
-    data.push( new Array() );
-
-    for (var column = 0; column< columnCount; column++){
-      data[row].push({
-        x: xpos,
-        y: ypos,
-        width: width,
-        height: height,
-        click: click,
-        //  dayIndex: column,
-      })
-
-      xpos += width; //imcrement the x pos
-    }
-
-    xpos = 10;
-    ypos += height;
-  }
-
-  return data;
-}
-*/
+    
+    
 
 
-
-
- 
-//function onclick(d)
-//{
-//    let label = d.dayData.label;
-//    for (let i = 0; i < this.filter.Days.length; i++ )
-//    {
-//        let  dayEntry = this.filter.Days[i];
-//        if (label == dayEntry.label)
-//        {
-//            dayEntry.active = !dayEntry.active;
-//            EventSystem.Instance.RaiseEvent("OnFilterChange", this.filter)
-//            NotifyFilterUpdate();
-//            break;
-//        }
-//    }
-//    console.error("error!");
-//};
-
-
-
-
-/////////       /////////////////////////
-///////     MONTHS      /////////
-//////////////////////////////////
-
-
-/*
-let MonthsArray = [
-        {label: "JAN" },
-        {label: "FEB" },
-        {label: "MAR" },
-        {label: "APRIL"},
-        {label: "MAY" },
-        {label: "JUNE" },
-        {label: "JULY" },
-        {label: "AUG" },
-        {label: "SEP" },
-        {label: "OCT" },
-        {label: "NOV" },
-        {label: "DEC" },
-];
-
-
-
-var gridMData = gridMData(1, 12);
-    let gridMrow = gridMData [0];
-    for (let i = 0; i<12; i++){
-        let entry = gridMrow[i];
-        entry.day = MonthsArray[i];
-    }
-    console.log(gridMData);
- 
-var grid = d3.select("#grid")
-    .append("svg")
-    .attr("width","1000px")
-    .attr("height","250px");
- 
-var row = grid.selectAll(".row")
-    .data(gridMData)
-    .enter().append("g")
-    .attr("class","row")
- //
-var column = row.selectAll(".square")
-    .data(function(d){
-        return d;
-    })
-.enter().append("rect")
-.attr("class","square")
-.attr("x", function(d) {return d.x; })
-.attr("y", function(d) {return d.y; })
-.attr("width",function(d) {return d.width;})
-.attr("height",function(d) {return d.height;})
-.style("fill","#fff")
-.style("stroke","#222")
-
-.on('click', function(d){
-    console.log(d.dayData.MonthsArray.label);
-    d.click ++;
-    if ((d.click)%4 == 0 ) {d3.select(this).style("fill","#fff");}
-    if ((d.click)%4 == 1 ) {d3.select(this).style("fill","#2c93E8");}
-    if ((d.click)%4 == 2 ) {d3.select(this).style("fill","#F56C4E");}
-    if ((d.click)%4 == 3 ) {d3.select(this).style("fill","#838690");}
-})
-*/
-
- 
-// /////////       /////////////////////////
-// ///////     HOURS      /////////
-// //////////////////////////////////
-
-// function gridHData(rowCount, columnCount){
-//     var data = new Array();
-//     var xpos = 200;
-//     var ypos =40;
-//     var width = 25;
-//     var height = 25;
-//     var click = 0;
- 
-//     for (var row = 0; row< rowCount; row++){
-//         data.push( new Array() );
- 
-//         for (var column = 0; column< columnCount; column++){
-//             data[row].push({
-//                 x: xpos,
-//                 y: ypos,
-//                 width: width,
-//                 height: height,
-//                 click: click,
-//               //  dayIndex: column,
-//             })
-         
-//             xpos += width; //imcrement the x pos
-//         }
- 
-//         xpos = 10;
-//         ypos += height;
-//     }
- 
-//     return data;
-// }
-
-// let HOURSArray = [
-//         {label: "1" },
-//         {label: "2" },
-//         {label: "3" },
-//         {label: "4"},
-//         {label: "5" },
-//         {label: "6" },
-//         {label: "7" },
-//         {label: "8" },
-//         {label: "9" },
-//         {label: "10" },
-//         {label: "11" },
-//         {label: "12" },
-// ];
-
-
-
-// var gridMData = gridMData(1, 12);
-//     let gridMrow = gridMData [0];
-//     for (let i = 0; i<12; i++){
-//         let entry = gridMrow[i];
-//         entry.day = MonthsArray[i];
-//     }
-//     console.log(gridMData);
- 
-// var grid = d3.select("#grid")
-//     .append("svg")
-//     .attr("width","1000px")
-//     .attr("height","250px");
- 
-// var row = grid.selectAll(".row")
-//     .data(gridMData)
-//     .enter().append("g")
-//     .attr("class","row")
-//  //
-// var column = row.selectAll(".square")
-//     .data(function(d){
-//         return d;
-//     })
-// .enter().append("rect")
-// .attr("class","square")
-// .attr("x", function(d) {return d.x; })
-// .attr("y", function(d) {return d.y; })
-// .attr("width",function(d) {return d.width;})
-// .attr("height",function(d) {return d.height;})
-// .style("fill","#fff")
-// .style("stroke","#222")
-
-// .on('click', function(d){
-//     console.log(d.dayData.MonthsArray.label);
-//     d.click ++;
-//     if ((d.click)%4 == 0 ) {d3.select(this).style("fill","#fff");}
-//     if ((d.click)%4 == 1 ) {d3.select(this).style("fill","#2c93E8");}
-//     if ((d.click)%4 == 2 ) {d3.select(this).style("fill","#F56C4E");}
-//     if ((d.click)%4 == 3 ) {d3.select(this).style("fill","#838690");}
-// })
-
-
-
-
-
-
-
- 
-
-
-
-/*    
-var square = svg.append("rect")
-    .attr("height", 50)
-    .attr("width", 50)
-    .attr("x", 10)
-    .attr("x", 10)
-    .attr("fill", "orange")
-    .on("mousedown", mouseDown)
-    .on("mouseup", mouseUp)
-    .on("click", mouseClick);
- 
-function mouseDown(){
-    console.log("mouseDown");
-}
- 
-function mouseUp(){
-    console.log("mouseup");
-}
- 
-function mouseClick(){
-    console.log("mouseClick");
-}
-
-
-
-
-*/
+};
