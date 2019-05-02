@@ -110,7 +110,9 @@ var FatalityData = (function()
 
 			// Check days.  If one matches, pass this part of the filter.
 			let days = filter.Days;
+			let months = filter.Months;
 			let dayPass = false;
+			let monthPass = false;
 			
 			for (let i = 0; i < days.length; i++)
 			{
@@ -149,8 +151,46 @@ var FatalityData = (function()
 				}
 			}
 
+			for (let i = 0; i < months.length; i++)
+			{
+				// Extract useful information into locals.
+				let monthData = months[i];
+				let label = monthData.label;
+				let active = monthData.active;
+
+				// Data in the database files is stored as integers,
+				// so to compare those to the filters, the string must be
+				// converted into an integer.  This is stored in labelID.
+				let labelID = this.GetIDForMonth(label);
+				if (!active)
+				{
+					// This day isn't being displayed.
+					
+					if (data.MONTH == labelID)
+					{
+						// Match.  This does not meet the filter.
+						return false;
+					}
+
+					// If the accident happened on a different day, it might match
+					// that one, so keep going.
+					continue;
+				}
+
+				// This day is being checked.  If this is the correct day for this
+				// accident, pass the day check and move on.
+				if (data.MONTH == labelID)
+				{
+					// This accident happened on the correct day for this filter.
+					// Pass the day check and move on.
+					monthPass = true;
+					break;
+				}
+			}
+
 			// Concatenate boolean values for all filters.
-			let pass = dayPass;
+			//TODO: I think we can just pass this automatically?
+			let pass = dayPass && monthPass;
 
 			return pass;
 		}
@@ -161,6 +201,12 @@ var FatalityData = (function()
 			return this.dayToIDMap.get(weekString);
 		}
 
+		GetIDForMonth(monthString)
+		{
+			// ids start at 1 for january, 12 is december.
+			return this.monthToIDMap.get(monthString);
+		}
+
 		// Same contrivance as GeoData.
 		PostConstruction()
 		{
@@ -169,18 +215,8 @@ var FatalityData = (function()
 			// the this.Filter setting in filter.js.
 			// We'll need to move that file over to a class later,
 			// but we can manage that later.
-			let filter = {
-				Days: [
-					{label: "MON", active: true},
-					{label: "TUE", active: true},
-					{label: "WED", active: true},
-					{label: "THUR", active: true},
-					{label: "FRI", active: true},
-					{label: "SAT", active: true},
-					{label: "SUN", active: true}
-				]
-			}
-			this.ApplyFilter(filter);
+			
+			this.ApplyFilter(null, false);
 		}
 
 		constructor()
@@ -204,9 +240,23 @@ var FatalityData = (function()
 			this.dayToIDMap.set("MON", 2);
 			this.dayToIDMap.set("TUE", 3);
 			this.dayToIDMap.set("WED", 4);
-			this.dayToIDMap.set("THUR", 5);
+			this.dayToIDMap.set("THU", 5);
 			this.dayToIDMap.set("FRI", 6);
 			this.dayToIDMap.set("SAT", 7);
+
+			this.monthToIDMap = new Map();
+			this.monthToIDMap.set("JAN", 1);
+			this.monthToIDMap.set("FEB", 2);
+			this.monthToIDMap.set("MAR", 3);
+			this.monthToIDMap.set("APR", 4);
+			this.monthToIDMap.set("MAY", 5);
+			this.monthToIDMap.set("JUN", 6);
+			this.monthToIDMap.set("JUL", 7);
+			this.monthToIDMap.set("AUG", 8);
+			this.monthToIDMap.set("SEP", 9);
+			this.monthToIDMap.set("OCT", 10);
+			this.monthToIDMap.set("NOV", 11);
+			this.monthToIDMap.set("DEC", 12);
 
 			this.maxDeathsByYear = 0;
 			this.maxDeathsByCounty = 0;

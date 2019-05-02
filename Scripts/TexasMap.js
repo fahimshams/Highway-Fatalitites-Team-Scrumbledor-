@@ -278,8 +278,6 @@ class TexasMap
 							.scaleExtent([1, 10])
 							)
 					.call(zoomHandler.transform, d3.zoomIdentity.translate(this.baseTranslation.x,this.baseTranslation.y));
-
-		EventSystem.Instance.AddListener("OnFatalityDataUpdated", this, this.HandleFatalityDataUpdate);
 	}
 
 	CalculateFillForFeature(feature)
