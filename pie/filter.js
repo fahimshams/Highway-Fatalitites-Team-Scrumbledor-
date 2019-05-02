@@ -37,7 +37,8 @@ class Filter
     {
     	this.svg = svg;
       this.div = div;
-      this.pieGroup = null;
+      this.pieGroupAm = null;
+      this.pieGroupPm = null;
       
 			this.DaysArray = [
           {label: "MON" },
@@ -61,9 +62,9 @@ class Filter
         {label: "SEP"},
         {label: "OCT"},
         {label: "NOV"},
-        {label: "DEC"},]
+        {label: "DEC"},];
 
-      this.HoursArray = [
+      this.AmHoursArray = [
         {label: "1", count: 1},
         {label: "2", count: 1},
         {label: "3", count: 1},
@@ -75,11 +76,38 @@ class Filter
         {label: "9", count: 1},
         {label: "10", count: 1},
         {label: "11", count: 1},
-        {label: "12", count: 1}
-          ];
+        {label: "12", count: 1},];
+      
+        this.PmHoursArray = [
+          {label: "1", count: 1},
+          {label: "2", count: 1},
+          {label: "3", count: 1},
+          {label: "4", count: 1},
+          {label: "5", count: 1},
+          {label: "6", count: 1},
+          {label: "7", count: 1},
+          {label: "8", count: 1},
+          {label: "9", count: 1},
+          {label: "10", count: 1},
+          {label: "11", count: 1},
+          {label: "12", count: 1},];
         
       this.Filter = {
-         Hours : [
+         AmHours : [
+            {label: "01", active: true},
+            {label: "02", active: true},
+            {label: "03", active: true},
+            {label: "04", active: true},
+            {label: "05", active: true},
+            {label: "06", active: true},
+            {label: "07", active: true},
+            {label: "08", active: true},
+            {label: "09", active: true},
+            {label: "10", active: true},
+            {label: "11", active: true},
+            {label: "12", active: true},],
+
+          PmHours : [
             {label: "01", active: true},
             {label: "02", active: true},
             {label: "03", active: true},
@@ -118,7 +146,7 @@ class Filter
  			};
 			
       this.HourButtons = null;
-      let drawHeight = this.buildHourPie();
+      let drawHeight = this.buildHourPies();
       this.DayButtons = null;
       drawHeight = this.buildDayGrid(drawHeight);
       this.MonthButtons = null;
@@ -450,7 +478,7 @@ class Filter
       return data;
   	}
     
-    buildHourPie()
+    buildHourPies()
     {
       //let svg = d3.select('#rightDiv')
       //  .append('svg')
@@ -460,10 +488,17 @@ class Filter
       //  .attr('transform','translate(' + (width /2)+ ',' + (height / 2 ) + ')');
     
     	let radius = 100;
-      let padding = 20;
+      let verticalPadding = 20;
+      let piePadding = 20;
       
-    	this.pieGroup = this.svg.append('g')
-      	.attr('transform', 'translate(' + (this.div.clientWidth / 2) + ',' + (radius + padding) +')');
+      let center = this.div.clientWidth / 2;
+      let offset = radius + (piePadding / 2);
+      
+    	this.pieGroupAm = this.svg.append('g')
+      	.attr('transform', 'translate(' + (center - offset) + ',' + (radius + verticalPadding) +')');
+        
+      this.pieGroupPm = this.svg.append('g')
+      	.attr('transform', 'translate(' + (center + offset) + ',' + (radius + verticalPadding) +')');
     	
       let arc = d3.arc()
         .innerRadius(0)
@@ -473,21 +508,22 @@ class Filter
         .value(function(d) {return d.count;})
         .sort(null);
 
-      let path = this.pieGroup.selectAll('path')
-        .data(pie(this.HoursArray))
+      let pathOne = this.pieGroupAm.selectAll('path')
+        .data(pie(this.AmHoursArray))
+        .enter()
+        .append('path')
+        .attr('d', arc)
+        .attr('fill', function (d, i){ return d3.rgb(Math.random() * 255, 0, 0); });
+       
+      let pathTwo = this.pieGroupPm.selectAll('path')
+        .data(pie(this.PmHoursArray))
         .enter()
         .append('path')
         .attr('d', arc)
         .attr('fill', function (d, i){ return d3.rgb(Math.random() * 255, 0, 0); });
         
-    	return (padding * 2) + (radius * 2);
+    	return (verticalPadding * 2) + (radius * 2);
     };
-
-    
-
-
-    
-    
 
 
 };
