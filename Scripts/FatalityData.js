@@ -10,6 +10,10 @@ var FatalityData = (function()
 	// 61 is cameron county
 	class FatalityDataClass
 	{
+		get DataReady()
+		{
+			return this.dataReady;
+		}
 		// Active data after filtering.
 		get FatalityData()
 		{
@@ -114,8 +118,12 @@ var FatalityData = (function()
 			// Check days.  If one matches, pass this part of the filter.
 			let days = filter.Days;
 			let months = filter.Months;
+			let amHours = filter.AmHours;
+			let pmHours = filter.PmHours;
 			let dayPass = false;
 			let monthPass = false;
+			let amPass = false;
+			let pmPass = false;
 			
 			for (let i = 0; i < days.length; i++)
 			{
@@ -191,9 +199,92 @@ var FatalityData = (function()
 				}
 			}
 
+			for (let i = 0; i < amHours.length; i++)
+			{
+				// Extract useful information into locals.
+				let amData = amHours[i];
+				let label = amData.label;
+				let active = amData.active;
+
+				// Data in the database files is stored as integers,
+				// so to compare those to the filters, the string must be
+				// converted into an integer.  This is stored in labelID.
+				let labelID = parseInt(label); // Range from 01 to 12
+				let checkingID = labelID - 1;
+				// If the value was 12, we're actually checking from 11 pm
+				// to midnight, so adjust accordingly.
+				if (labelID == 12)
+				{
+					checkingID = 23;
+				}
+
+				if (!active)
+				{
+					// This day isn't being displayed.
+					
+					if (data.HOUR == checkingID)
+					{
+						// Match.  This does not meet the filter.
+						return false;
+					}
+
+					// If the accident happened on a different day, it might match
+					// that one, so keep going.
+					continue;
+				}
+
+				// This day is being checked.  If this is the correct day for this
+				// accident, pass the day check and move on.
+				if (data.HOUR == checkingID)
+				{
+					// This accident happened on the correct day for this filter.
+					// Pass the day check and move on.
+					amPass = true;
+					break;
+				}
+			}
+
+			for (let i = 0; i < pmHours.length; i++)
+			{
+				// Extract useful information into locals.
+				let pmData = amHours[i];
+				let label = pmData.label;
+				let active = pmData.active;
+
+				// Data in the database files is stored as integers,
+				// so to compare those to the filters, the string must be
+				// converted into an integer.  This is stored in labelID.
+				let labelID = parseInt(label); // Range from 01 to 12
+				let checkingID = (labelID - 1) + 12; // Remap to 12 to 23
+				if (!active)
+				{
+					// This day isn't being displayed.
+					
+					if (data.HOUR == checkingID)
+					{
+						// Match.  This does not meet the filter.
+						return false;
+					}
+
+					// If the accident happened on a different day, it might match
+					// that one, so keep going.
+					continue;
+				}
+
+				// This day is being checked.  If this is the correct day for this
+				// accident, pass the day check and move on.
+				if (data.HOUR == checkingID)
+				{
+					// This accident happened on the correct day for this filter.
+					// Pass the day check and move on.
+					pmPass = true;
+					break;
+				}
+			}
+
 			// Concatenate boolean values for all filters.
 			//TODO: I think we can just pass this automatically?
-			let pass = dayPass && monthPass;
+			let pass = dayPass && monthPass && (amPass || pmPass);
 
 			return pass;
 		}
@@ -212,6 +303,7 @@ var FatalityData = (function()
 
 		ParseJSON()
 		{
+			this.dataReady = false;
 			let filename = "converted_accidents_";
 			let sThis = this;
 			for (let i = this.earliestYear; i <= this.latestYear; i++)
@@ -246,6 +338,8 @@ var FatalityData = (function()
 			this.fullData = this.tempData;
 			this.tempData = null;
 			this.ApplyFilter(this.lastFilter, (this.lastFilter != null));
+
+			EventSystem.Instance.RaiseEvent("SystemReady");
 		}
 
 		// Same contrivance as GeoData.
@@ -262,10 +356,16 @@ var FatalityData = (function()
 
 		constructor()
 		{
+			this.dataReady = true;
 			this.lastFilter = null;
 			this.numFilesRead = 0;
 			this.earliestYear = 2000;
 			this.latestYear = 2017;
+			if (!useJSON)
+			{
+				this.earliestYear = 2015;
+				this.latestYear = 2017;
+			}
 			this.numFilesExpected = this.latestYear - this.earliestYear + 1;
 			this.tempData = [];
 			EventSystem.Instance.AddListener("OnFilterChange", this, this.FilterChangeCallback);
