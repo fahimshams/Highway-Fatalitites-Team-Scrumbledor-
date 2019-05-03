@@ -130,16 +130,16 @@ class Filter
             {label: "DEC", active: true},],
 
           Ages : [
-            {label: "00-10", active: true},
-            {label: "11-20", active: true},
-            {label: "21-30", active: true},
-            {label: "31-40", active: true},
-            {label: "41-50", active: true},
-            {label: "51-60", active: true},
-            {label: "61-70", active: true},
-            {label: "71-80", active: true},
-            {label: "81-90", active: true},
-            {label: "90+", active: true}, ]
+            {label: "00-10", active: true, min: 0, max: 10},
+            {label: "11-20", active: true, min: 11, max: 20},
+            {label: "21-30", active: true, min: 21, max: 30},
+            {label: "31-40", active: true, min: 31, max: 40},
+            {label: "41-50", active: true, min: 41, max: 50},
+            {label: "51-60", active: true, min: 51, max: 60},
+            {label: "61-70", active: true, min: 61, max: 70},
+            {label: "71-80", active: true, min: 71, max: 80},
+            {label: "81-90", active: true, min: 81, max: 90},
+            {label: "90+", active: true, min: 91, max: 200}, ]
  			};
 			
       this.AmHourButtons = null;
