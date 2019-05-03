@@ -1,6 +1,6 @@
 'use strict'
 
-var useJSON = false;
+var useJSON = true;
 
 var FatalityData = (function()
 {
@@ -14,6 +14,7 @@ var FatalityData = (function()
 		{
 			return this.dataReady;
 		}
+
 		// Active data after filtering.
 		get FatalityData()
 		{
@@ -120,15 +121,52 @@ var FatalityData = (function()
 			let months = filter.Months;
 			let amHours = filter.AmHours;
 			let pmHours = filter.PmHours;
+			let ages = filter.Ages;
 			let dayPass = false;
 			let monthPass = false;
 			let amPass = false;
 			let pmPass = false;
+			let agePass = false;
 			
-			for (let i = 0; i < days.length; i++)
+			dayPass =   this.CheckAgainstDayFilter(data, days);
+			monthPass = this.CheckAgainstMonthFilter(data, months);
+			amPass =    this.CheckAgainstAmHoursFilter(data, amHours);
+			pmPass = this.CheckAgainstPmHoursFilter(data, pmHours);
+			
+			for (let i = 0; i < ages.length; i++)
 			{
 				// Extract useful information into locals.
-				let dayData = days[i];
+				let ageData = ages[i];
+				let minAge = ageData.min;
+				let maxAge = ageData.max;
+				let active = ageData.active;
+
+				if (active)
+				{
+					// This filter is being checked.  At least one person
+					// in this accident must pass the age check to pass.
+					if (this.FindAgeInArray(data.PEOPLE, minAge, maxAge))
+					{
+						// Matched at least one, pass.
+						agePass = true;
+						break;
+					}
+				}
+			}
+
+			// Concatenate boolean values for all filters.
+			//TODO: I think we can just pass this automatically?
+			//      Can't do that with the way age filtering is processed.
+			//      If we fail age filtering manually, we might be able to.
+			return dayPass && monthPass && (amPass || pmPass) && agePass;
+		}
+
+		CheckAgainstDayFilter(data, dayFilter)
+		{
+			for (let i = 0; i < dayFilter.length; i++)
+			{
+				// Extract useful information into locals.
+				let dayData = dayFilter[i];
 				let label = dayData.label;
 				let active = dayData.active;
 
@@ -157,15 +195,20 @@ var FatalityData = (function()
 				{
 					// This accident happened on the correct day for this filter.
 					// Pass the day check and move on.
-					dayPass = true;
-					break;
+					return true;
 				}
 			}
 
-			for (let i = 0; i < months.length; i++)
+			// Found nothing, fail by default.
+			return false;
+		}
+
+		CheckAgainstMonthFilter(data, monthFilter)
+		{
+			for (let i = 0; i < monthFilter.length; i++)
 			{
 				// Extract useful information into locals.
-				let monthData = months[i];
+				let monthData = monthFilter[i];
 				let label = monthData.label;
 				let active = monthData.active;
 
@@ -194,15 +237,20 @@ var FatalityData = (function()
 				{
 					// This accident happened on the correct day for this filter.
 					// Pass the day check and move on.
-					monthPass = true;
-					break;
+					return true;
 				}
 			}
 
-			for (let i = 0; i < amHours.length; i++)
+			// Found nothing, fail by default.
+			return false;
+		}
+
+		CheckAgainstAmHoursFilter(data, amHoursFilter)
+		{
+			for (let i = 0; i < amHoursFilter.length; i++)
 			{
 				// Extract useful information into locals.
-				let amData = amHours[i];
+				let amData = amHoursFilter[i];
 				let label = amData.label;
 				let active = amData.active;
 
@@ -211,18 +259,11 @@ var FatalityData = (function()
 				// converted into an integer.  This is stored in labelID.
 				let labelID = parseInt(label); // Range from 01 to 12
 				let checkingID = labelID - 1;
-				// If the value was 12, we're actually checking from 11 pm
-				// to midnight, so adjust accordingly.
-				if (labelID == 12)
-				{
-					checkingID = 23;
-				}
-
 				if (!active)
 				{
 					// This day isn't being displayed.
 					
-					if (data.HOUR == checkingID)
+					if (data.HOUR == checkingID || data.HOUR == checkingID + 24)
 					{
 						// Match.  This does not meet the filter.
 						return false;
@@ -235,19 +276,24 @@ var FatalityData = (function()
 
 				// This day is being checked.  If this is the correct day for this
 				// accident, pass the day check and move on.
-				if (data.HOUR == checkingID)
+				if (data.HOUR == checkingID || data.HOUR == checkingID + 24)
 				{
 					// This accident happened on the correct day for this filter.
 					// Pass the day check and move on.
-					amPass = true;
-					break;
+					return true;
 				}
 			}
 
-			for (let i = 0; i < pmHours.length; i++)
+			// No data found, fail be default.
+			return false;
+		}
+
+		CheckAgainstPmHoursFilter(data, pmHoursFilter)
+		{
+			for (let i = 0; i < pmHoursFilter.length; i++)
 			{
 				// Extract useful information into locals.
-				let pmData = amHours[i];
+				let pmData = pmHoursFilter[i];
 				let label = pmData.label;
 				let active = pmData.active;
 
@@ -277,16 +323,27 @@ var FatalityData = (function()
 				{
 					// This accident happened on the correct day for this filter.
 					// Pass the day check and move on.
-					pmPass = true;
-					break;
+					return true;
 				}
 			}
 
-			// Concatenate boolean values for all filters.
-			//TODO: I think we can just pass this automatically?
-			let pass = dayPass && monthPass && (amPass || pmPass);
+			// No data, fail by default.
+			return false;
+		}
 
-			return pass;
+		FindAgeInArray(arr, min, max)
+		{
+			for (let i = 0; i < arr.length; i++)
+			{
+				// We're assuming age ranges will not have overlap.
+				let tab = arr[i];
+				if (tab.AGE >= min && tab.AGE <= max)
+				{
+					return true;
+				}
+			}
+
+			return false;
 		}
 
 		GetIDForWeekDay(weekString)
@@ -324,7 +381,6 @@ var FatalityData = (function()
 			{
 				this.tempData.push(arr[i]);
 			}
-
 			
 			if (this.numFilesRead >= this.numFilesExpected)
 			{
@@ -335,6 +391,8 @@ var FatalityData = (function()
 
 		ParsingComplete()
 		{
+			this.maxDeathsByYear = 0;
+			this.maxDeathsByCounty = 0;
 			this.fullData = this.tempData;
 			this.tempData = null;
 			this.ApplyFilter(this.lastFilter, (this.lastFilter != null));
