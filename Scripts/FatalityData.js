@@ -1,6 +1,6 @@
 'use strict'
 
-var useJSON = false;
+var useJSON = true;
 
 var FatalityData = (function()
 {
@@ -377,7 +377,7 @@ var FatalityData = (function()
 		FinishedParsingFile(arr)
 		{
 			this.numFilesRead++;
-			console.log("finished parsing file. Parsed: " + this.numFilesRead);
+			this.DebugLog("finished parsing file. Parsed: " + this.numFilesRead);
 			// Add the data to the temp array.
 			for (let i = 0; i < arr.length; i++)
 			{
@@ -386,7 +386,7 @@ var FatalityData = (function()
 			
 			if (this.numFilesRead >= this.numFilesExpected)
 			{
-				console.log("Finished parsing all files.");
+				this.DebugLog("Finished parsing all files.");
 				this.ParsingComplete();
 			}
 		}
@@ -399,6 +399,7 @@ var FatalityData = (function()
 			this.tempData = null;
 			this.ApplyFilter(this.lastFilter, (this.lastFilter != null));
 
+			this.dataReady = true;
 			EventSystem.Instance.RaiseEvent("SystemReady");
 		}
 
@@ -414,8 +415,17 @@ var FatalityData = (function()
 			this.ApplyFilter(null, false);
 		}
 
+		DebugLog(text)
+		{
+			if (this.debugLogging)
+			{
+				console.log(text);
+			}
+		}
+
 		constructor()
 		{
+			this.debugLogging = false;
 			this.dataReady = true;
 			this.lastFilter = null;
 			this.numFilesRead = 0;
