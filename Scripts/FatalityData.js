@@ -1,6 +1,6 @@
 'use strict'
 
-var useJSON = true;
+var useJSON = false;
 
 var FatalityData = (function()
 {
@@ -145,7 +145,9 @@ var FatalityData = (function()
 				{
 					// This filter is being checked.  At least one person
 					// in this accident must pass the age check to pass.
-					if (this.FindAgeInArray(data.PEOPLE, minAge, maxAge))
+					// Null check is to avoid an issue with some of our debug 
+					// settings.
+					if (data.PEOPLE == null || this.FindAgeInArray(data.PEOPLE, minAge, maxAge))
 					{
 						// Matched at least one, pass.
 						agePass = true;
