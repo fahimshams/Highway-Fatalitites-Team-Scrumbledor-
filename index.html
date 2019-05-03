@@ -2,6 +2,7 @@
 <html lang = "en">
   <meta charset="utf-8">
   <title>Highway Fatalities in Texas</title>
+
   <style>
 	#topLeftDiv {
 		position: fixed;
@@ -49,6 +50,7 @@
     pointer-events: none;
   }
   </style>
+
   <body>
 	<div id="topLeftDiv"></div>
 	<div id="rightDiv"></div>
@@ -57,12 +59,13 @@
       Also, this assumes that the html file is in a folder above the
       Scripts folder, which contains the Maps class file.  -->
     <script type="text/javascript" src="d3/d3.js"></script>
-		<script src="Scripts/EventSystem.js"></script>
-		<script src="Scripts/FatalityData.js"></script>
-    <script src="Scripts/GeoData.js"></script>
-		<script src="Scripts/TexasMap.js"></script>
-		<script src="Scripts/Graph.js"></script>
-    <script src="pie/filter.js"></script>
+		<script type="text/javascript" src="Scripts/EventSystem.js"></script>
+    <script type="text/javascript" src="Scripts/FatalityData.js"></script>
+    <script type="text/javascript" src="Scripts/DeferredStart.js"></script>
+    <script type="text/javascript" src="Scripts/GeoData.js"></script>
+		<script type="text/javascript" src="Scripts/TexasMap.js"></script>
+		<script type="text/javascript" src="Scripts/Graph.js"></script>
+    <script type="text/javascript" src="pie/filter.js"></script>
     
     <script>
       // Grab the divs for the various elements.
