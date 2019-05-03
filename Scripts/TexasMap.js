@@ -240,6 +240,7 @@ class TexasMap
 				.enter()
 				.append("path")
 				.attr("d", this.geoGenerator)
+				
 				.attr("fill", function(d) {
 					if (d.mapData.fill)
 					{
@@ -263,9 +264,13 @@ class TexasMap
 					sThis.toolTip.html(tooltip)
 						.style("left", (d3.event.pageX + sThis.toolTipOffset) + "px")
 						.style("top", (d3.event.pageY + sThis.toolTipOffset) + "px");
+
+					d3.select(this).style("stroke", "gold");
+					d3.select(this).style("stroke-width", "1.8");
 				})
 				.on("mouseout", function(d) {
 					sThis.toolTip.transition().duration(400).style("opacity", 0);
+					d3.select(this).style("stroke", "none");
 				});
 		}
 
