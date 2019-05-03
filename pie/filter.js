@@ -1,35 +1,4 @@
-// var rect = svg.append("rect")
-// .attr("x", 300)
-// .attr("y", 50)
-// .attr("height", 20)
-// .attr("width", 20);
 
-// rect.on('click', function(){
-// console.log('i was clicked');
-// }) ;
-
-/*
-let monday filter = new Filters("Monday")
-let sunday filter = new Filters("Pizza")
- 
-burgerFilter.PrintTheThing();
- 
-class Filter
-{
-    get Filter()
-    {
-        return this.filter;
-    }
- 
-    constructor(arg)
-    {
-        this.food = arg;
-        this.filter = {
-            time = Monday
-        }
-    }
-}
-*/
 
 class Filter
 {
@@ -39,6 +8,7 @@ class Filter
       this.div = div;
       this.pieGroupAm = null;
       this.pieGroupPm = null;
+      
       
 			this.DaysArray = [
           {label: "MON" },
@@ -65,33 +35,36 @@ class Filter
         {label: "DEC"},];
 
       this.AmHoursArray = [
-        {label: "1", count: 1},
-        {label: "2", count: 1},
-        {label: "3", count: 1},
-        {label: "4", count: 1},
-        {label: "5", count: 1},
-        {label: "6", count: 1},
-        {label: "7", count: 1},
-        {label: "8", count: 1},
-        {label: "9", count: 1},
+        {label: "01", count: 1},
+        {label: "02", count: 1},
+        {label: "03", count: 1},
+        {label: "04", count: 1},
+        {label: "05", count: 1},
+        {label: "06", count: 1},
+        {label: "07", count: 1},
+        {label: "08", count: 1},
+        {label: "09", count: 1},
         {label: "10", count: 1},
         {label: "11", count: 1},
         {label: "12", count: 1},];
       
-        this.PmHoursArray = [
-          {label: "1", count: 1},
-          {label: "2", count: 1},
-          {label: "3", count: 1},
-          {label: "4", count: 1},
-          {label: "5", count: 1},
-          {label: "6", count: 1},
-          {label: "7", count: 1},
-          {label: "8", count: 1},
-          {label: "9", count: 1},
-          {label: "10", count: 1},
-          {label: "11", count: 1},
-          {label: "12", count: 1},];
-        
+      this.PmHoursArray = [
+        {label: "01", count: 1},
+        {label: "02", count: 1},
+        {label: "03", count: 1},
+        {label: "04", count: 1},
+        {label: "05", count: 1},
+        {label: "06", count: 1},
+        {label: "07", count: 1},
+        {label: "08", count: 1},
+        {label: "09", count: 1},
+        {label: "10", count: 1},
+        {label: "11", count: 1},
+        {label: "12", count: 1},];
+      
+          
+          //filter for AM PM hours and Days and Months
+          //with boolean true 
       this.Filter = {
          AmHours : [
             {label: "01", active: true},
@@ -121,7 +94,7 @@ class Filter
             {label: "11", active: true},
             {label: "12", active: true},],
 
-        Days : [
+          Days : [
             {label: "MON", active: true},
             {label: "TUE", active: true},
             {label: "WED", active: true},
@@ -130,7 +103,7 @@ class Filter
             {label: "SAT", active: true},
             {label: "SUN", active: true},],
 
-        Months : [
+          Months : [
             {label: "JAN", active: true},
             {label: "FEB", active: true},
             {label: "MAR", active: true},
@@ -145,7 +118,8 @@ class Filter
             {label: "DEC", active: true},]
  			};
 			
-      this.HourButtons = null;
+      this.AmHourButtons = null;
+      this.PmHourButtons = null;
       let drawHeight = this.buildHourPies();
       this.DayButtons = null;
       drawHeight = this.buildDayGrid(drawHeight);
@@ -202,6 +176,8 @@ class Filter
         .attr("font-family", "sans-serif")
         .attr("font-size", "15px")
         .attr("fill", "white")
+        .style("user-select", "none")
+        .style("pointer-events", "none")
 				.on('click', function(d){
           sThis.handleMonthFilterChanges(d);
           sThis.setColorsForMonthButtons();
@@ -347,6 +323,8 @@ class Filter
           .attr("font-family", "sans-serif")
           .attr("font-size", "15px")
           .attr("fill", "white")
+          .style("user-select", "none")
+          .style("pointer-events", "none")
 					.on('click', function(d){
             sThis.handleFilterChanges(d);
             sThis.setColorsForDayButtons();
@@ -381,12 +359,6 @@ class Filter
         }
       }
 
-      // Now we know which filter we clicked on, change it.
-      // Two cases:
-      // 1. Everything is true.  In this case set every filter we didn't click on to false.
-      // 2. At least 1 false, just toggle the one we clicked on.
-      //
-      // As a post check, if all filters are false after toggling, then flip them all to true.
       for (let i = 0; i < this.Filter.Days.length; i++)
       {
         let checkingFilter = this.Filter.Days[i];
@@ -478,18 +450,17 @@ class Filter
       return data;
   	}
     
+
+
+    //build pies for time
     buildHourPies()
     {
-      //let svg = d3.select('#rightDiv')
-      //  .append('svg')
-      //  .attr('width', width)
-      //  .attr('height',height)
-      //  .append('g')
-      //  .attr('transform','translate(' + (width /2)+ ',' + (height / 2 ) + ')');
-    
+      
     	let radius = 100;
       let verticalPadding = 20;
       let piePadding = 20;
+
+      let sThis=this;
       
       let center = this.div.clientWidth / 2;
       let offset = radius + (piePadding / 2);
@@ -504,26 +475,241 @@ class Filter
         .innerRadius(0)
         .outerRadius(radius);
 
+      let labelArc = d3.arc()
+        .innerRadius(radius/4)
+        .outerRadius(radius);
+
       let pie = d3.pie()
         .value(function(d) {return d.count;})
         .sort(null);
 
-      let pathOne = this.pieGroupAm.selectAll('path')
+
+      // pathOne for Am Clock
+      
+      this.AmHourButtons = this.pieGroupAm.selectAll('path')
         .data(pie(this.AmHoursArray))
         .enter()
         .append('path')
         .attr('d', arc)
-        .attr('fill', function (d, i){ return d3.rgb(Math.random() * 255, 0, 0); });
-       
-      let pathTwo = this.pieGroupPm.selectAll('path')
+        //.attr('fill', function (d, i){ return d3.rgb(Math.random() * 255, 0, 0); })
+        .on('click', function(d){
+          sThis.handleAmFilterChanges(d);
+          sThis.setColorsForAmPie();
+          EventSystem.Instance.RaiseEvent("OnFilterChange", sThis.Filter)});
+
+          sThis.setColorsForAmPie();
+
+      //Am text
+      this.pieGroupAm.selectAll(".arc")
+        .data(pie(this.AmHoursArray))
+        .enter().append("text")
+        .attr("transform",function(d) {return "translate(" + labelArc.centroid(d) + ")"; })
+        .attr("dy", ".35em")
+        .text(function(d) {return d.data.label;})
+        .attr("text-anchor", "middle")
+        .attr("font-family", "sans-serif")
+        .attr("font-size", "15px")
+        .attr("fill", "white")
+        .style("user-select", "none")
+        .style("pointer-events", "none");
+
+      //pathTwo for Pm Clock
+      this.PmHourButtons = this.pieGroupPm.selectAll('path')
         .data(pie(this.PmHoursArray))
         .enter()
         .append('path')
         .attr('d', arc)
-        .attr('fill', function (d, i){ return d3.rgb(Math.random() * 255, 0, 0); });
+        //.attr('fill', function (d, i){ return d3.rgb(Math.random() * 255, 0, 0); })
+        .on('click', function(d){
+          sThis.handlePmFilterChanges(d);
+          sThis.setColorsForPmPie();
+          EventSystem.Instance.RaiseEvent("OnFilterChange", sThis.Filter)});
+          
+      sThis.setColorsForPmPie();
+
+      //text for PM Clock
+      this.pieGroupPm.selectAll(".arc")
+      .data(pie(this.PmHoursArray))
+      .enter().append("text")
+      .attr("transform",function(d) {return "translate(" + labelArc.centroid(d) + ")"; })
+      .attr("dy", ".35em")
+      .text(function(d) {return d.data.label;})
+      .attr("text-anchor", "middle")
+      .attr("font-family", "sans-serif")
+      .attr("font-size", "15px")
+      .attr("fill", "white")        
+      .style("user-select", "none")
+      .style("pointer-events", "none");
+
         
+
     	return (verticalPadding * 2) + (radius * 2);
     };
 
+    handleAmFilterChanges(d)
+    {
+        //console.log(d.day.label);
+      let hourName = d.data.label;
+
+      // Find the filter we clicked on.
+      let clickedFilter = null;
+      let numInactive = 0;
+      for (let i = 0; i < this.Filter.AmHours.length; i++)
+      {
+        let checkingFilter = this.Filter.AmHours[i];
+        if (checkingFilter.label === hourName)
+        {
+          clickedFilter = checkingFilter;
+        }
+
+        if (!checkingFilter.active)
+        {
+          numInactive++;
+        }
+      }
+  
+  
+      for (let i = 0; i < this.Filter.AmHours.length; i++)
+      {
+        let checkingFilter = this.Filter.AmHours[i];
+        let filterActive = checkingFilter.active;
+
+        if (!filterActive)
+        {
+          clickedFilter.active = !clickedFilter.active;
+          if (!clickedFilter.active)
+          {
+            numInactive++;
+          }
+          break;
+        }
+      }
+
+      if (numInactive == 0) // All true, toggle everything off except the one we just clicked.
+      {
+        for (let i = 0; i < this.Filter.AmHours.length; i++)
+        {
+          let checkingFilter = this.Filter.AmHours[i];
+          if (checkingFilter.label != clickedFilter.label)
+          {
+            checkingFilter.active = false;
+          }
+        }
+      }
+      else if (numInactive == this.Filter.AmHours.length) // All off, toggle everything on.
+      {
+        for (let i = 0; i < this.Filter.AmHours.length; i++)
+        {
+          let checkingFilter = this.Filter.AmHours[i];
+          checkingFilter.active = true;
+        }
+      }
+    }
+
+    setColorsForAmPie()
+    {
+    	let sThis = this;
+    	this.AmHourButtons.style("fill", function(d) {
+      	let label = d.data.label;
+        for (let i = 0; i < sThis.Filter.AmHours.length; i++)
+        {
+        	let checkingFilter = sThis.Filter.AmHours[i];
+          if (checkingFilter.label == label)
+          {
+          	if (checkingFilter.active)
+            {
+            	return "green";
+            }
+            else
+            {
+            	return "red";
+            }
+          }
+        }
+      });
+    }
+
+
+    handlePmFilterChanges(d)
+    {
+        //console.log(d.day.label);
+      let hourName = d.data.label;
+
+      // Find the filter we clicked on.
+      let clickedFilter = null;
+      let numInactive = 0;
+      for (let i = 0; i < this.Filter.PmHours.length; i++)
+      {
+        let checkingFilter = this.Filter.AmHours[i];
+        if (checkingFilter.label === hourName)
+        {
+          clickedFilter = checkingFilter;
+        }
+
+        if (!checkingFilter.active)
+        {
+          numInactive++;
+        }
+      }
+
+      for (let i = 0; i < this.Filter.PmHours.length; i++)
+      {
+        let checkingFilter = this.Filter.PmHours[i];
+        let filterActive = checkingFilter.active;
+
+        if (!filterActive)
+        {
+          clickedFilter.active = !clickedFilter.active;
+          if (!clickedFilter.active)
+          {
+            numInactive++;
+          }
+          break;
+        }
+      }
+
+      if (numInactive == 0) // All true, toggle everything off except the one we just clicked.
+      {
+        for (let i = 0; i < this.Filter.PmHours.length; i++)
+        {
+          let checkingFilter = this.Filter.PmHours[i];
+          if (checkingFilter.label != clickedFilter.label)
+          {
+            checkingFilter.active = false;
+          }
+        }
+      }
+      else if (numInactive == this.Filter.PmHours.length) // All off, toggle everything on.
+      {
+        for (let i = 0; i < this.Filter.PmHours.length; i++)
+        {
+          let checkingFilter = this.Filter.PmHours[i];
+          checkingFilter.active = true;
+        }
+      }
+    }
+
+    setColorsForPmPie()
+    {
+    	let sThis = this;
+    	this.PmHourButtons.style("fill", function(d) {
+      	let label = d.data.label;
+        for (let i = 0; i < sThis.Filter.PmHours.length; i++)
+        {
+        	let checkingFilter = sThis.Filter.AmHours[i];
+          if (checkingFilter.label == label)
+          {
+          	if (checkingFilter.active)
+            {
+            	return "green";
+            }
+            else
+            {
+            	return "red";
+            }
+          }
+        }
+      });
+    }
 
 };
