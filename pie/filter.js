@@ -34,6 +34,18 @@ class Filter
         {label: "NOV"},
         {label: "DEC"},];
 
+      this.AgeArray = [
+        {label: "00-10"},
+        {label: "11-20"},
+        {label: "21-30"},
+        {label: "31-40"},
+        {label: "41-50"},
+        {label: "51-60"},
+        {label: "61-70"},
+        {label: "71-80"},
+        {label: "81-90"},
+        {label: "90+"},];
+
       this.AmHoursArray = [
         {label: "01", count: 1},
         {label: "02", count: 1},
@@ -115,7 +127,19 @@ class Filter
             {label: "SEP", active: true},
             {label: "OCT", active: true},
             {label: "NOV", active: true},
-            {label: "DEC", active: true},]
+            {label: "DEC", active: true},],
+
+          Ages : [
+            {label: "00-10", active: true},
+            {label: "11-20", active: true},
+            {label: "21-30", active: true},
+            {label: "31-40", active: true},
+            {label: "41-50", active: true},
+            {label: "51-60", active: true},
+            {label: "61-70", active: true},
+            {label: "71-80", active: true},
+            {label: "81-90", active: true},
+            {label: "90+", active: true}, ]
  			};
 			
       this.AmHourButtons = null;
@@ -124,18 +148,22 @@ class Filter
       this.DayButtons = null;
       drawHeight = this.buildDayGrid(drawHeight);
       this.MonthButtons = null;
-      this.buildMonthGrid(drawHeight);
+      drawHeight = this.buildMonthGrid(drawHeight);
+      this.AgeButtons = null;
+      this.buildAgeGrid(drawHeight);
       
       
     }
     
     buildMonthGrid(drawHeight)
     {
-    	//let gridData = this.generateGridData(2, 6, {x: 200, y: 40}, {width: 25, height: 25});
+      //let gridData = this.generateGridData(2, 6, {x: 200, y: 40}, {width: 25, height: 25});
+      let topPadding = 60;
+      let bottomPadding = 20;
       let dim = {width: 50, height: 50};
       let centerX = this.div.clientWidth / 2;
       let boxWidth = 6 * dim.width;
-      let pos = {x: centerX - (boxWidth /2), y: drawHeight + 90};
+      let pos = {x: centerX - (boxWidth /2), y: drawHeight + topPadding};
       let gridData = this.generateGridData(2, 6, pos, dim);
      	// let gridrow = gridData [0];
       for (let i = 0; i < 12; i++){
@@ -185,6 +213,8 @@ class Filter
         });
 
         this.MonthButtons = monthGroup.selectAll("rect");
+
+        return drawHeight + topPadding + dim.height + bottomPadding;
 
     }
     
@@ -404,6 +434,149 @@ class Filter
         for (let i = 0; i < sThis.Filter.Days.length; i++)
         {
         	let checkingFilter = sThis.Filter.Days[i];
+          if (checkingFilter.label == label)
+          {
+          	if (checkingFilter.active)
+            {
+            	return "green";
+            }
+            else
+            {
+            	return "red";
+            }
+          }
+        }
+      });
+    }
+
+    buildAgeGrid(drawHeight)
+    {
+      //Generate grid for the age buttons and inject data
+      let topPadding = 60;
+      let bottomPadding = 20;
+      let dim = {width: 50, height: 50};
+      let centerX = this.div.clientWidth /2 ;
+      let boxWidth = 10 * dim.width;
+      let pos = {x: centerX - (boxWidth /2), y: drawHeight + topPadding};
+      let gridData = this.generateGridData(1, 10, pos, dim);
+      for (let i = 0; i <10;i++){
+          let AgeData = gridData[i];
+          AgeData.age = this.AgeArray[i];
+      }
+
+      let sThis = this;
+
+      //Buttons for Age
+      let ageGroup = this.svg.append("g");
+      let column = ageGroup.selectAll(".square")
+          .data(gridData)
+          .enter().append("rect")
+          .attr("class", "square")
+          .attr("x", function(d) {return d.x; })
+          .attr("y", function(d) {return d.y; })
+          .attr("width", function(d) {return d.width;})
+          .attr("height", function(d) {return d.height;})
+          .style("fill", "green")
+          .style("stroke","#222")
+          .on('click', function(d){
+            sThis.handleAgeFilterChanges(d);
+            sThis.setColorsForAgeButtons();
+            EventSystem.Instance.RaiseEvent("OnFilterChange", sThis.Filter);
+          });
+
+
+      let text = ageGroup.selectAll(".labelText")
+          .data(gridData)
+          .enter().append("text")
+          .attr("class", "labelText")
+          .attr("x", function(d) {return d.x + (d.width /5); })
+          .attr("y", function(d) {return d.y + (d.height/2) + 5})
+          .text(function(d) {return d.age.label;})
+          .attr("text-Anchor", "middle")
+          .attr("font-family", "sans-serif")
+          .attr("font-size", "13.5px")
+          .attr("fill", "white")
+          .style("user-select", "none")
+          .style("pointer-events", "none")
+          .on('click', function(d){
+            sThis.handleAgeFilterChanges(d);
+            sThis.setColorsForAgeButtons();
+            EventSystem.Instance.RaiseEvent("onFilterChange". sThis.Filter);
+          });
+
+          this.AgeButtons = ageGroup.selectAll("rect");
+
+          return drawHeight + topPadding + dim.height + bottomPadding;
+    }
+
+
+    //edits day filter
+    handleAgeFilterChanges(d)
+    {
+      let ageName = d.age.label;
+
+      // Find the filter we clicked on.
+      let clickedFilter = null;
+      let numInactive = 0;
+      for (let i = 0; i < this.Filter.Ages.length; i++)
+      {
+        let checkingFilter = this.Filter.Ages[i];
+        if (checkingFilter.label === ageName)
+        {
+          clickedFilter = checkingFilter;
+        }
+
+        if (!checkingFilter.active)
+        {
+          numInactive++;
+        }
+      }
+
+      for (let i = 0; i < this.Filter.Ages.length; i++)
+      {
+        let checkingFilter = this.Filter.Ages[i];
+        let filterActive = checkingFilter.active;
+
+        if (!filterActive)
+        {
+          clickedFilter.active = !clickedFilter.active;
+          if (!clickedFilter.active)
+          {
+            numInactive++;
+          }
+          break;
+        }
+      }
+
+      if (numInactive == 0) // All true, toggle everything off except the one we just clicked.
+      {
+        for (let i = 0; i < this.Filter.Ages.length; i++)
+        {
+          let checkingFilter = this.Filter.Ages[i];
+          if (checkingFilter.label != clickedFilter.label)
+          {
+            checkingFilter.active = false;
+          }
+        }
+      }
+      else if (numInactive == this.Filter.Ages.length) // All off, toggle everything on.
+      {
+        for (let i = 0; i < this.Filter.Ages.length; i++)
+        {
+          let checkingFilter = this.Filter.Ages[i];
+          checkingFilter.active = true;
+        }
+      }
+    }
+    
+    setColorsForAgeButtons()
+    {
+    	let sThis = this;
+    	this.AgeButtons.style("fill", function(d) {
+      	let label = d.age.label;
+        for (let i = 0; i < sThis.Filter.Ages.length; i++)
+        {
+        	let checkingFilter = sThis.Filter.Ages[i];
           if (checkingFilter.label == label)
           {
           	if (checkingFilter.active)
