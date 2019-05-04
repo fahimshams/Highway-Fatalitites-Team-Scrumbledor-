@@ -1,7 +1,8 @@
-class Graph
+class Graph extends DeferredStart
 {
   constructor(svg, div)
   {
+    super();
     this.mainSVG = svg;
     this.graphSVG = null;
     this.graphGroup = null;
@@ -22,9 +23,9 @@ class Graph
     this.height = this.div.clientHeight - this.margin.top - this.margin.bottom;
     this.tooltip = d3.select("body")//Mouse over transition
                 .append('div')
+                .attr("class", "mapToolTip")
                 .style('position', 'absolute')
-                .style('background', '#fff')
-                .style('padding', '5px-15px')
+                .style('background', '#32CD32')
                 .style('border', '1px-#fff-solid')
                 .style('opacity', 0);
 
@@ -40,13 +41,19 @@ class Graph
     this.xGuide = null;
     this.yGuide = null;
     this.filteredCounty = "";
+    this.d3Data = [];
 
     
     //d3.json('../Graph/js/data/forecast.json', function(d){
       
-      this.ParseFatalityData();
-      this.InitializeScales();
-      this.InitializeGraph();
+    this.TryInitialize();
+  }
+
+  Initialize()
+  {
+    this.ParseFatalityData();
+    this.InitializeScales();
+    this.InitializeGraph();
   
   
    // })
@@ -55,6 +62,7 @@ class Graph
     EventSystem.Instance.AddListener("OnCountyClicked", this, this.CountyClickedCallback);
     EventSystem.Instance.AddListener("OnFatalityDataUpdated", this, this.FatalityDataUpdatedCallback);
     EventSystem.Instance.AddListener("OnWindowResize", this, this.HandleResize);
+
   }
 
   CountyClickedCallback(args)
@@ -104,23 +112,25 @@ class Graph
     
         let sThis = this;
       this.graphSVG
-        .selectAll('rect').data(this.fatalityDeaths)
-        .attr('fill', this.colors)
+        .selectAll('rect').data(this.d3Data)
+        .attr('fill', function(d){
+          return sThis.colors(d.deaths);
+        })
         .attr('width', function(d){
 
           return sThis.xScale.bandwidth();
         })
 
         .attr('height', function(d) {
-          return sThis.yScale(d);
+          return sThis.yScale(d.deaths);
         })
 
         .attr('x', function(d) {
-          return sThis.xScale(d);
+          return sThis.xScale1(d.year);
         })
 
         .attr('y', function(d) {
-          return sThis.height - sThis.GetXAxisHeight() - sThis.yScale(d);
+          return sThis.height - sThis.GetXAxisHeight() - sThis.yScale(d.deaths);
       
 
       })
@@ -191,6 +201,15 @@ class Graph
         this.fatalityYears.splice(yearIndex, 0, year);
         this.fatalityDeaths.splice(yearIndex, 0, accident.FATALS);
       }
+    }
+
+    this.d3Data = [];
+    for(let i = 0; i < this.fatalityYears.length; i++)
+    {
+        let year = this.fatalityYears[i];
+        let fatalities = this.fatalityDeaths[i];
+
+        this.d3Data.push({year: year, deaths: fatalities});
     }
     console.log(this.fatalityYears);
     console.log(this.fatalityDeaths);
@@ -280,42 +299,43 @@ class Graph
       .attr('transform', 
             'translate('+ this.margin.left +',' + this.margin.top +')')
   
-      .selectAll('rect').data(this.fatalityDeaths)
+      .selectAll('rect').data(this.d3Data)
         .enter().append('rect')
-        .attr('fill', this.colors)
+        .attr('fill', function(d){
+          return sThis.colors(d.deaths);
+        })
         .attr('width', function(d){
 
           return sThis.xScale.bandwidth();
         })
 
         .attr('height', function(d) {
-          return sThis.yScale(d);
+          return sThis.yScale(d.deaths);
         })
 
         .attr('x', function(d) {
-          return sThis.xScale(d);
+          return sThis.xScale1(d.year);
         })
 
         .attr('y', function(d) {
-          return sThis.height - sThis.GetXAxisHeight() - sThis.yScale(d);
+          return sThis.height - sThis.GetXAxisHeight() - sThis.yScale(d.deaths);
       
 
       }).on('mouseover', function(d){ //Mouseover transition
-
+          let tooltip = "<br><br>Fatalities: " + d.deaths;
           sThis.tooltip.transition().duration(200)
           .style('opacity', 1);
-          sThis.tooltip.html(d)
-          .style('left', (d3.event.pageX)+"px")
-          .style('top', (d3.event.pageY)+"px");
+          sThis.tooltip.html(tooltip)
+          .style('left', (d3.event.pageX + 10)+"px")
+          .style('top', (d3.event.pageY)+"px")
+          .style("user-select", "none")
+          .style("pointer-events", "none");
 
           d3.select(this).style('opacity', 0.5);
 
       }).on('mouseout', function(d){
-          sThis.tooltip.transition().style('opacity', 0);
-          sThis.tooltip.html(d)
-          .style('left', (d3.event.pageX)+"px")
-          .style('top', (d3.event.pageY)+"px");
-          d3.select(this).style('opacity', 1);
+          sThis.tooltip.transition().duration(400).style('opacity', 0);
+  
       });
  
       // this.graphSVG.append("rect")
