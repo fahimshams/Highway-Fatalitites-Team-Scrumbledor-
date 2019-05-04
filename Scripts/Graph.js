@@ -334,8 +334,9 @@ class Graph extends DeferredStart
           d3.select(this).style('opacity', 0.5);
 
       }).on('mouseout', function(d){
-          sThis.tooltip.transition().duration(400).style('opacity', 0);
-  
+          sThis.tooltip.transition().style('opacity', 0);
+          sThis.tooltip.html(d)
+          d3.select(this).style('opacity', 1);
       });
  
       // this.graphSVG.append("rect")
