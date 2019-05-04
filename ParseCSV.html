@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Process CSV</title>
+<a download="info.txt" id="downloadlink" style="display: none">Download</a>
+<script type="text/javascript" src ="PapaParse/papaparse.min.js"></script>
+<script>
+	var EExportType = { Text: 1, JSON: 2, CSV: 3};
+
+	var exportType = EExportType.JSON;
+	var useParseLimit = false;
+	var parseLimit = 500;
+
+	function ProcessAccidentFile()
+	{
+		let filteredFields = [
+			"FATALS",
+			"COUNTY",
+			"DAY",
+			"MONTH",
+			"YEAR",
+			"DAY_WEEK",
+			"HOUR",
+			"MINUTE"
+		];
+
+		let accidentFiles = document.getElementById("uploadInputAccidents").files;
+		
+		let safety = 0;
+		Papa.parse(accidentFiles[0], {
+			worker: true,
+			header: true,
+			dynamicTyping: true,
+			complete: function(results) {
+				let accidentMap = new Map();
+				// Initial step to account for errors when opening dbf files
+				for (let i = 0; i < results.data.length; i++)
+				{
+					let rowData = results.data[i];
+					for (let obj in rowData)
+					{
+						let val = rowData[obj];
+						let newKey = obj;
+						let oldLength = newKey.length;
+
+						newKey = StripJunk(newKey);
+						if (newKey.length != oldLength)
+						{
+							delete rowData[obj];
+							rowData[newKey] = val;
+						}
+					}
+				}
+
+				let discarded = 0;
+				let kept = 0;
+				for (let i = results.data.length - 1; i >= 0; i--)
+				{
+					let rowData = results.data[i];
+					let newObj = {};
+					if (rowData["STATE"] != 48 || (useParseLimit && parseLimit <= 0))
+					{
+						discarded++;
+						results.data.splice(i, 1);
+						continue;
+					}
+					parseLimit--;
+					kept++;
+
+					let caseNum = rowData["ST_CASE"];
+					for (let j = 0; j < filteredFields.length; j++)
+					{
+						let key = filteredFields[j];
+						newObj[key] = rowData[key];
+					}
+					
+					accidentMap.set(caseNum, newObj);
+					results.data[i] = newObj;
+					newObj.PEOPLE = [];
+				}
+
+				console.log("Discarded: " + discarded + ", Kept: " + kept);
+				results.fields= filteredFields;
+
+				ProcessPeopleFile(results, accidentMap);
+			}
+		});
+	}
+	
+	function ProcessPeopleFile(accidentData, accidentMap)
+	{
+		let peopleFiles = document.getElementById("uploadInputPeople").files;
+		
+		let safety = 0;
+		Papa.parse(peopleFiles[0], {
+			worker: true,
+			header: true,
+			dynamicTyping: true,
+			complete: function(results) {
+				// Initial step to account for errors when opening dbf files
+				for (let i = 0; i < results.data.length; i++)
+				{
+					let rowData = results.data[i];
+					for (let obj in rowData)
+					{
+						let val = rowData[obj];
+						let newKey = obj;
+						let oldLength = newKey.length;
+
+						newKey = StripJunk(newKey);
+						if (newKey.length != oldLength)
+						{
+							delete rowData[obj];
+							rowData[newKey] = val;
+						}
+					}
+				}
+
+				for (let i = results.data.length - 1; i >= 0; i--)
+				{
+					let rowData = results.data[i];
+					if (rowData["STATE"] != 48 || rowData["DEATH_YR"] == 0 || rowData["DEATH_YR"] == 8888)
+					{
+						continue;
+					}
+
+					let caseNum = rowData["ST_CASE"];
+					let age = rowData["AGE"];
+					let accident = accidentMap.get(caseNum);
+					if (accident == undefined)
+					{
+						continue;
+					}
+
+					accident.PEOPLE.push({AGE: age});
+				}
+
+				// Validation
+				for (let i = 0; i < accidentData.data.length; i++)
+				{
+					let data = accidentData.data[i];
+					if (data.FATALS != data.PEOPLE.length || data.PEOPLE.length == 0)
+					{
+						console.log("ERROR");
+					}
+				}
+
+				ProcessFile(accidentData);
+			}
+		});
+		
+		
+	}
+
+	function ProcessFile(results) 
+	{
+		let accidentFiles = document.getElementById("uploadInputAccidents").files;
+		// File has been converted.
+		let unparsedCSV = null;
+		let fileName = accidentFiles[0].name;
+		switch (exportType)
+		{
+			case EExportType.Text:
+			{
+				unparsedCSV = JSON.stringify(results);
+				fileName = fileName.substr(0, fileName.indexOf("."));
+				fileName += ".txt";
+				break;
+			}
+			case EExportType.JSON:
+			{
+				unparsedCSV = JSON.stringify(results.data);
+
+				fileName = fileName.substr(0, fileName.indexOf("."));
+				fileName += ".json";
+				break;
+			}
+			case EExportType.CSV:
+			{
+				unparsedCSV = Papa.unparse(results);
+				break;
+			}
+		}
+
+		let newFilename = "converted_" + fileName;
+		var link = document.getElementById('downloadlink');
+		link.download = newFilename;
+		link.href = MakeTextFile(unparsedCSV);
+		link.style.display = 'block';
+		link.innerText = "Download " + newFilename;
+		console.log("Done");
+	}
+
+var textFile = null;
+function MakeTextFile(text) 
+{
+	var data = new Blob([text], {type: 'text/plain'});
+
+	// If we are replacing a previously generated file we need to
+	// manually revoke the object URL to avoid memory leaks.
+	if (textFile !== null) {
+		window.URL.revokeObjectURL(textFile);
+	}
+
+	textFile = window.URL.createObjectURL(data);
+	
+	return textFile;
+};
+
+function StripJunk(text)
+{
+	let commaInd = text.indexOf(",");
+	if (commaInd == -1)
+	{
+		return text;
+	}
+
+	return text.substr(0, commaInd);
+}
+
+</script>
+</head>
+
+<body>
+<form name="uploadForm">
+<p><input id="uploadInputAccidents" type="file"> Accidents File </p>
+<p><input id="uploadInputPeople" type="file"> People File </p>
+<p><input id="test" type="button" onclick="ProcessAccidentFile();" value="Parse"></p>
+</form>
+</body>
+</html>
