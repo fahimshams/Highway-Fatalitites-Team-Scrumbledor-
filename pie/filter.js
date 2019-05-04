@@ -35,6 +35,7 @@ class Filter
         {label: "DEC"},];
 
       this.AgeArray = [
+        {label: "Ages:"},
         {label: "00-10"},
         {label: "11-20"},
         {label: "21-30"},
@@ -73,11 +74,18 @@ class Filter
         {label: "10", count: 1},
         {label: "11", count: 1},
         {label: "12", count: 1},];
+
+      this.TimeArray = [
+        {label: "AM"},
+        {label: "PM"},
+      ];
+
       
           
           //filter for AM PM hours and Days and Months
           //with boolean true 
       this.Filter = {
+
          AmHours : [
             {label: "01", active: true},
             {label: "02", active: true},
@@ -130,6 +138,7 @@ class Filter
             {label: "DEC", active: true},],
 
           Ages : [
+            {label: "Ages:", active: true, min: 0, max: 0},
             {label: "00-10", active: true, min: 0, max: 10},
             {label: "11-20", active: true, min: 11, max: 20},
             {label: "21-30", active: true, min: 21, max: 30},
@@ -144,6 +153,7 @@ class Filter
 			
       this.AmHourButtons = null;
       this.PmHourButtons = null;
+      this.TimeButtons = null;
       let drawHeight = this.buildHourPies();
       this.DayButtons = null;
       drawHeight = this.buildDayGrid(drawHeight);
@@ -456,10 +466,10 @@ class Filter
       let bottomPadding = 20;
       let dim = {width: 50, height: 50};
       let centerX = this.div.clientWidth /2 ;
-      let boxWidth = 10 * dim.width;
+      let boxWidth = 11 * dim.width;
       let pos = {x: centerX - (boxWidth /2), y: drawHeight + topPadding};
-      let gridData = this.generateGridData(1, 10, pos, dim);
-      for (let i = 0; i <10;i++){
+      let gridData = this.generateGridData(1, 11, pos, dim);
+      for (let i = 0; i <11;i++){
           let AgeData = gridData[i];
           AgeData.age = this.AgeArray[i];
       }
@@ -643,7 +653,11 @@ class Filter
         
       this.pieGroupPm = this.svg.append('g')
       	.attr('transform', 'translate(' + (center + offset) + ',' + (radius + verticalPadding) +')');
-    	
+      
+        
+
+       
+
       let arc = d3.arc()
         .innerRadius(0)
         .outerRadius(radius);
@@ -658,7 +672,6 @@ class Filter
 
 
       // pathOne for Am Clock
-      
       this.AmHourButtons = this.pieGroupAm.selectAll('path')
         .data(pie(this.AmHoursArray))
         .enter()
@@ -714,6 +727,58 @@ class Filter
       .style("user-select", "none")
       .style("pointer-events", "none");
 
+
+      //////for AM PM buttons
+      //
+      //
+      //
+      //
+          //
+      //
+    
+      let dim = {width: 50, height: 50};
+      let height = 220;
+      let centerX = this.div.clientWidth /2 ;
+      let boxWidth = 2 * dim.width;
+      let pos = {x: centerX - (boxWidth /2), y: (height)};
+      let gridData = this.generateGridData(1, 2, pos, dim);
+      for (let i = 0; i <2;i++){
+          let TimeData = gridData[i];
+          TimeData.time = this.TimeArray[i];
+      }
+
+      //let sThis = this;
+
+      //non clickable Buttons for AM PM 
+      let timeGroup = this.svg.append("g");
+      let column = timeGroup.selectAll(".square")
+          .data(gridData)
+          .enter().append("rect")
+          .attr("class", "square")
+          .attr("x", function(d) {return d.x; })
+          .attr("y", function(d) {return d.y; })
+          .attr("width", function(d) {return d.width;})
+          .attr("height", function(d) {return d.height;})
+          .style("fill", "black")
+          .style("stroke","#222")
+
+          let text = timeGroup.selectAll(".labelText")
+          .data(gridData)
+          .enter().append("text")
+          .attr("class", "labelText")
+          .attr("x", function(d) {return d.x + (d.width / 2); })
+          .attr("y", function(d) {return d.y + (d.height / 2) + 5; })
+          .text(function(d) {
+            return d.time.label;
+           })
+          .attr("text-anchor", "middle")
+          .attr("font-family", "sans-serif")
+          .attr("font-size", "15px")
+          .attr("fill", "white")
+          .style("user-select", "none")
+          .style("pointer-events", "none")
+
+          this.TimeButtons = timeGroup.selectAll("rect");
         
 
     	return (verticalPadding * 2) + (radius * 2);
