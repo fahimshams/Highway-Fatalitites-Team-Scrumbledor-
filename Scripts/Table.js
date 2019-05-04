@@ -81,7 +81,11 @@ class Table
 		{
 			this.ind = fatalityData.length - this.rows;
 		}
-
+		else if (this.ind < 0)
+		{
+			this.ind = 0;
+		}
+		
 		let slice = fatalityData.slice(this.ind, this.ind + this.rows);
 		// Delete old rows.
 		this.tbody.selectAll("tr").remove();
