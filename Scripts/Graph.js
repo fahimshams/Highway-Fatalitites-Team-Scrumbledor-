@@ -118,7 +118,7 @@ class Graph extends DeferredStart
         })
         .attr('width', function(d){
 
-          return sThis.xScale.bandwidth();
+          return sThis.xScale1.bandwidth();
         })
 
         .attr('height', function(d) {
@@ -161,8 +161,12 @@ class Graph extends DeferredStart
   ParseFatalityData()
   {
   // Year on x-axis, number of fatalities on y axis.
-  	this.fatalityYears  = [];
-    this.fatalityDeaths = [];
+
+    for(let i = 0; i < this.fatalityDeaths.length; i++)
+    {
+      this.fatalityDeaths[i] = 0;
+    }
+  
     
   	let fatalityData = FatalityData.Instance.FatalityData;
     for (let i = 0; i < fatalityData.length; i++)
@@ -306,7 +310,7 @@ class Graph extends DeferredStart
         })
         .attr('width', function(d){
 
-          return sThis.xScale.bandwidth();
+          return sThis.xScale1.bandwidth();
         })
 
         .attr('height', function(d) {
