@@ -4,6 +4,29 @@
   <title>Highway Fatalities in Texas</title>
 
   <style>
+  #flex {
+    display: flex;
+  }
+  #bgDiv {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    left: 0px;
+    top: 0px;
+    
+    z-index: 1
+    
+  }
+  #fullDiv {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    left: 0px;
+    top: 0px;
+    
+    z-index: 2;
+  }
+  
 	#topLeftDiv {
 		position: fixed;
 		width: 66%;
@@ -49,12 +72,47 @@
     border-radius: 4px;
     pointer-events: none;
   }
+
+  .button {
+    background-color: green; /* Green */
+    border: none;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 2px 2px;
+    cursor: pointer;
+    padding: 2px 6px;
+    z-index: 0;
+    position:fixed;
+    
+    border-style:outset;
+    border-color: green;
+  }
+
+  .button:hover {
+    border-color: rgb(95, 170, 95);
+    background-color: rgb(95, 170, 95);
+  }
+
+  .button:active {
+    border-style: inset;
+    border-color: darkgreen;
+    background-color: darkgreen;
+  }
   </style>
 
   <body>
-	<div id="topLeftDiv"></div>
+	<div id="topLeftDiv"><button id="TableButton" class="button">View Table</button></div>
 	<div id="rightDiv"></div>
-	<div id="bottomDiv"></div>
+  <div id="bottomDiv"></div>
+  
+  <div id="flex">
+      <div id="fullDiv"><button id="ReturnButton" class="button">Return to Map</button></div>
+      <div id="bgDiv"></div>
+  </div>
+  
     <!-- Need to figure out how to get this to load from a local file.
       Also, this assumes that the html file is in a folder above the
       Scripts folder, which contains the Maps class file.  -->
@@ -66,17 +124,23 @@
 		<script type="text/javascript" src="Scripts/TexasMap.js"></script>
 		<script type="text/javascript" src="Scripts/Graph.js"></script>
     <script type="text/javascript" src="pie/filter.js"></script>
+    <script type="text/javascript" src="Scripts/Table.js"></script>
     
     <script>
       // Grab the divs for the various elements.
       var mapDiv = document.getElementById("topLeftDiv");
       var filtersDiv = document.getElementById("rightDiv");
       var graphDiv = document.getElementById("bottomDiv");
+     
 
       // Generate SVGs for each of the systems to use for their graphics.
 	  	var mapSVG = d3.select(mapDiv).append("svg");
 	  	var filtersSVG = d3.select(filtersDiv).append("svg");
-	  	var graphSVG = d3.select(graphDiv).append("svg");
+      var graphSVG = d3.select(graphDiv).append("svg");
+      var bgSVG = d3.select(bgDiv).append("svg");
+
+      // fullSVG.append('rect').attr('width', fullDiv.clientWidth).attr('height', fullDiv.clientHeight)
+      //   .attr("fill", "red");
 
       // Callback that is called whenever the window is resized.  Manages the sizes
       // of the system SVGs and raises an event that systems can hook into to
@@ -98,14 +162,29 @@
         let graphH = graphDiv.clientHeight;
         graphSVG.attr("width", graphW).attr("height", graphH);
 
+        let fullW = fullDiv.clientWidth;
+        let fullH = fullDiv.clientHeight;
+        bgSVG.attr("width", fullW).attr("height", fullH);
+
         // Raise an event notifying other systems that the window has been resized.
         EventSystem.Instance.RaiseEvent("OnWindowResize");
-	  	}
+      }
+      
+      function ToggleTable(tab)
+      {
+        tab.ToggleVisiblity();
+      }
+
+      let returnButton = document.getElementById("ReturnButton");
 
       // Create various system objects as necessary.
       let countyMap = new TexasMap(mapSVG, mapDiv);
       let graph = new Graph(graphSVG, graphDiv);
       let filter = new Filter(filtersSVG, filtersDiv);
+      let table = new Table(bgSVG, bgDiv, fullDiv, returnButton);
+
+      let button = document.getElementById("TableButton");
+      d3.select(button).on("click", function() { ToggleTable(table) });
 
       // Set initial dimensions.
       Repaint();
