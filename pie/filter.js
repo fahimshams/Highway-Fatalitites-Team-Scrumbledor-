@@ -878,7 +878,7 @@ class Filter
       let numInactive = 0;
       for (let i = 0; i < this.Filter.PmHours.length; i++)
       {
-        let checkingFilter = this.Filter.AmHours[i];
+        let checkingFilter = this.Filter.PmHours[i];
         if (checkingFilter.label === hourName)
         {
           clickedFilter = checkingFilter;
@@ -934,7 +934,7 @@ class Filter
       	let label = d.data.label;
         for (let i = 0; i < sThis.Filter.PmHours.length; i++)
         {
-        	let checkingFilter = sThis.Filter.AmHours[i];
+        	let checkingFilter = sThis.Filter.PmHours[i];
           if (checkingFilter.label == label)
           {
           	if (checkingFilter.active)
