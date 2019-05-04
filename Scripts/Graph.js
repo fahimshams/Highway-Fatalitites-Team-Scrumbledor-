@@ -335,7 +335,6 @@ class Graph extends DeferredStart
 
       }).on('mouseout', function(d){
           sThis.tooltip.transition().style('opacity', 0);
-          sThis.tooltip.html(d)
           d3.select(this).style('opacity', 1);
       });
  
