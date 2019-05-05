@@ -166,7 +166,7 @@ class Filter
       this.AgeButtons = null;
       drawHeight = this.buildAgeGrid(drawHeight);
       this.AgeLabelButtons = null;
-      this.buildAgeLabelGrid(drawHeight);
+      drawHeight = this.buildAgeLabelGrid(drawHeight);
       
       
     }
@@ -472,9 +472,9 @@ class Filter
       let bottomPadding = 20;
       let dim = {width: 50, height: 50};
       let centerX = this.div.clientWidth /2 ;
-      let boxWidth = 10 * dim.width;
+      let boxWidth = 5 * dim.width;
       let pos = {x: centerX - (boxWidth /2), y: drawHeight + topPadding};
-      let gridData = this.generateGridData(1, 10, pos, dim);
+      let gridData = this.generateGridData(2, 5, pos, dim);
       for (let i = 0; i <10;i++){
           let AgeData = gridData[i];
           AgeData.age = this.AgeArray[i];
@@ -611,7 +611,7 @@ class Filter
     buildAgeLabelGrid(drawHeight)
     {
     	// Generate the grid for the day buttons and inject day data.
-      let topPadding = 0;
+      let topPadding = 60;
       let bottomPadding = 20;
       let dim = {width: 50, height: 50};
       let centerX = this.div.clientWidth / 2;
@@ -636,7 +636,7 @@ class Filter
           .attr("y", function(d) {return d.y; })
           .attr("width",function(d) {return d.width;})
           .attr("height",function(d) {return d.height;})
-          .style("fill","green")
+          .style("fill","black")
           .style("stroke","#222")
         
         
