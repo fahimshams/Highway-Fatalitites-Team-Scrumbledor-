@@ -215,8 +215,6 @@ class Graph extends DeferredStart
 
         this.d3Data.push({year: year, deaths: fatalities});
     }
-    console.log(this.fatalityYears);
-    console.log(this.fatalityDeaths);
   }
   
   UpdateGuides()
@@ -292,7 +290,6 @@ class Graph extends DeferredStart
     let sThis = this;
     //d3.select('#viz').append('svg')
     this.graphSVG = this.mainSVG.append('svg');
-    console.log("4");
     this.ParseFatalityData();
     //this.GetXAxisHeight();
     this.graphSVG
