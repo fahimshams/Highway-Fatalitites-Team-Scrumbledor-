@@ -153,33 +153,50 @@ class Filter
             {label: "71-80", active: true, min: 71, max: 80},
             {label: "81-90", active: true, min: 81, max: 90},
             {label: "90+", active: true, min: 91, max: 200}, ]
- 			};
+       };
+      
+      this.MainGroup = this.svg.append('g').attr("transform", this.translateString(this.div.clientWidth / 2, 0));
 			
       this.AmHourButtons = null;
       this.PmHourButtons = null;
       this.TimeButtons = null;
       let drawHeight = this.buildHourPies();
+
       this.DayButtons = null;
       drawHeight = this.buildDayGrid(drawHeight);
+
       this.MonthButtons = null;
       drawHeight = this.buildMonthGrid(drawHeight);
+
       this.AgeButtons = null;
       drawHeight = this.buildAgeGrid(drawHeight);
+
       this.AgeLabelButtons = null;
       drawHeight = this.buildAgeLabelGrid(drawHeight);
       
-      
+      EventSystem.Instance.AddListener("OnWindowResize", this, this.handleResize);
     }
     
+    handleResize()
+    {
+      let center = this.div.clientWidth / 2;
+
+      this.MainGroup.attr("transform", this.translateString(center, 0));
+    }
+
+    translateString(x, y)
+    {
+      return "translate(" + x + "," + y + ")";
+    }
+
     buildMonthGrid(drawHeight)
     {
       //let gridData = this.generateGridData(2, 6, {x: 200, y: 40}, {width: 25, height: 25});
       let topPadding = 60;
       let bottomPadding = 20;
       let dim = {width: 50, height: 50};
-      let centerX = this.div.clientWidth / 2;
       let boxWidth = 6 * dim.width;
-      let pos = {x: centerX - (boxWidth /2), y: drawHeight + topPadding};
+      let pos = {x: -(boxWidth /2), y: drawHeight + topPadding};
       let gridData = this.generateGridData(2, 6, pos, dim);
      	// let gridrow = gridData [0];
       for (let i = 0; i < 12; i++){
@@ -189,11 +206,10 @@ class Filter
 
       //Buttons for Months
       let sThis = this;
-			let monthGroup = this.svg.append("g");
-      let column = monthGroup.selectAll(".square")
+      this.MonthButtons = this.MainGroup.selectAll(".monthButton")
         .data(gridData)
         .enter().append("rect")
-        .attr("class", "square")
+        .attr("class", "monthButton")
         .attr("x", function(d) {return d.x; })
         .attr("y", function(d) {return d.y; })
         .attr("width", function(d) {return d.width;})
@@ -207,10 +223,10 @@ class Filter
         });
 
       //TEXT for months
-      let text = monthGroup.selectAll(".labelText")
+      let text = this.MainGroup.selectAll(".monthLabelText")
         .data(gridData)
         .enter().append("text")
-        .attr("class", "labelText")
+        .attr("class", "monthLabelText")
         .attr("x", function(d) {return d.x + (d.width / 2); })
         .attr("y", function(d) {return d.y + (d.height / 2) + 5; })
         .text(function(d) {
@@ -227,8 +243,6 @@ class Filter
           sThis.setColorsForMonthButtons();
           EventSystem.Instance.RaiseEvent("OnFilterChange", sThis.Filter);
         });
-
-        this.MonthButtons = monthGroup.selectAll("rect");
 
         return drawHeight + topPadding + dim.height + bottomPadding;
 
@@ -325,9 +339,8 @@ class Filter
       let topPadding = 60;
       let bottomPadding = 20;
       let dim = {width: 50, height: 50};
-      let centerX = this.div.clientWidth / 2;
       let boxWidth = 7 * dim.width;
-      let pos = {x: centerX - (boxWidth / 2), y: drawHeight + topPadding};
+      let pos = {x: -(boxWidth / 2), y: drawHeight + topPadding};
     	let gridData = this.generateGridData(1, 7, pos, dim);
       for (let i = 0; i<7; i++){
           let entry = gridData[i];
@@ -338,11 +351,10 @@ class Filter
       let sThis = this;
         
       // Buttons //
-      let dayGroup = this.svg.append("g");
-      let column = dayGroup.selectAll(".square")
+      this.DayButtons = this.MainGroup.selectAll(".dayButton")
           .data(gridData)
           .enter().append("rect")
-          .attr("class","square")
+          .attr("class","dayButton")
           .attr("x", function(d) {return d.x; })
           .attr("y", function(d) {return d.y; })
           .attr("width",function(d) {return d.width;})
@@ -356,10 +368,10 @@ class Filter
         });
         
         // Text //
-      let text = dayGroup.selectAll(".labelText")
+      let text = this.MainGroup.selectAll(".dayLabelText")
           .data(gridData)
           .enter().append("text")
-          .attr("class", "labelText")
+          .attr("class", "dayLabelText")
           .attr("x", function(d) {return d.x + (d.width / 2); })
           .attr("y", function(d) {return d.y + (d.height / 2) + 5; })
           .text(function(d) {
@@ -376,8 +388,6 @@ class Filter
             sThis.setColorsForDayButtons();
             EventSystem.Instance.RaiseEvent("OnFilterChange", sThis.Filter);
         });
-        
-        this.DayButtons = dayGroup.selectAll("rect");
         
         return drawHeight + topPadding + dim.height + bottomPadding;
     }
@@ -471,9 +481,8 @@ class Filter
       let topPadding = 60;
       let bottomPadding = 20;
       let dim = {width: 50, height: 50};
-      let centerX = this.div.clientWidth /2 ;
       let boxWidth = 5 * dim.width;
-      let pos = {x: centerX - (boxWidth /2), y: drawHeight + topPadding};
+      let pos = {x: -(boxWidth /2), y: drawHeight + topPadding};
       let gridData = this.generateGridData(2, 5, pos, dim);
       for (let i = 0; i <10;i++){
           let AgeData = gridData[i];
@@ -483,11 +492,10 @@ class Filter
       let sThis = this;
 
       //Buttons for Age
-      let ageGroup = this.svg.append("g");
-      let column = ageGroup.selectAll(".square")
+      this.AgeButtons = this.MainGroup.selectAll(".ageButton")
           .data(gridData)
           .enter().append("rect")
-          .attr("class", "square")
+          .attr("class", "ageButton")
           .attr("x", function(d) {return d.x; })
           .attr("y", function(d) {return d.y; })
           .attr("width", function(d) {return d.width;})
@@ -501,10 +509,10 @@ class Filter
           });
 
 
-      let text = ageGroup.selectAll(".labelText")
+      let text = this.MainGroup.selectAll(".ageLabelText")
           .data(gridData)
           .enter().append("text")
-          .attr("class", "labelText")
+          .attr("class", "ageLabelText")
           .attr("x", function(d) {return d.x + (d.width /5); })
           .attr("y", function(d) {return d.y + (d.height/2) + 5})
           .text(function(d) {return d.age.label;})
@@ -519,8 +527,6 @@ class Filter
             sThis.setColorsForAgeButtons();
             EventSystem.Instance.RaiseEvent("onFilterChange". sThis.Filter);
           });
-
-          this.AgeButtons = ageGroup.selectAll("rect");
 
           return drawHeight + topPadding + dim.height + bottomPadding;
     }
@@ -614,9 +620,8 @@ class Filter
       let topPadding = 60;
       let bottomPadding = 20;
       let dim = {width: 50, height: 50};
-      let centerX = this.div.clientWidth / 2;
       let boxWidth = 1 * dim.width;
-      let pos = {x: centerX - (boxWidth / 2), y: drawHeight + topPadding};
+      let pos = {x: -(boxWidth / 2), y: drawHeight + topPadding};
     	let gridData = this.generateGridData(1, 1, pos, dim);
       for (let i = 0; i<1; i++){
           let entry = gridData[i];
@@ -627,11 +632,10 @@ class Filter
       let sThis = this;
         
       // Buttons //
-      let ageLabelGroup = this.svg.append("g");
-      let column = ageLabelGroup.selectAll(".square")
+      this.AgeLabelButtons = this.MainGroup.selectAll(".ageLabel")
           .data(gridData)
           .enter().append("rect")
-          .attr("class","square")
+          .attr("class","ageLabel")
           .attr("x", function(d) {return d.x; })
           .attr("y", function(d) {return d.y; })
           .attr("width",function(d) {return d.width;})
@@ -641,10 +645,10 @@ class Filter
         
         
         // Text //
-      let text = ageLabelGroup.selectAll(".labelText")
+      let text = this.MainGroup.selectAll(".ageText")
           .data(gridData)
           .enter().append("text")
-          .attr("class", "labelText")
+          .attr("class", "ageText")
           .attr("x", function(d) {return d.x + (d.width / 2); })
           .attr("y", function(d) {return d.y + (d.height / 2) + 5; })
           .text(function(d) {
@@ -656,9 +660,6 @@ class Filter
           .attr("fill", "white")
           .style("user-select", "none")
           .style("pointer-events", "none")
-				
-        
-        this.AgeLabelButtons = ageLabelGroup.selectAll("rect");
         
         return drawHeight + topPadding + dim.height + bottomPadding;
     }
@@ -709,11 +710,13 @@ class Filter
       let center = this.div.clientWidth / 2;
       let offset = radius + (piePadding / 2);
       
-    	this.pieGroupAm = this.svg.append('g')
-      	.attr('transform', 'translate(' + (center - offset) + ',' + (radius + verticalPadding) +')');
+      
+
+    	this.pieGroupAm = this.MainGroup.append('g')
+      	.attr('transform', 'translate(' + (-offset) + ',' + (radius + verticalPadding) +')');
         
-      this.pieGroupPm = this.svg.append('g')
-      	.attr('transform', 'translate(' + (center + offset) + ',' + (radius + verticalPadding) +')');
+      this.pieGroupPm = this.MainGroup.append('g')
+      	.attr('transform', 'translate(' + (offset) + ',' + (radius + verticalPadding) +')');
       
 
       let arc = d3.arc()
@@ -739,9 +742,10 @@ class Filter
         .on('click', function(d){
           sThis.handleAmFilterChanges(d);
           sThis.setColorsForAmPie();
+          sThis.setColorsForPmPie();
           EventSystem.Instance.RaiseEvent("OnFilterChange", sThis.Filter)});
 
-          sThis.setColorsForAmPie();
+      sThis.setColorsForAmPie();
 
       //Am text
       this.pieGroupAm.selectAll(".arc")
@@ -766,6 +770,7 @@ class Filter
         //.attr('fill', function (d, i){ return d3.rgb(Math.random() * 255, 0, 0); })
         .on('click', function(d){
           sThis.handlePmFilterChanges(d);
+          sThis.setColorsForAmPie();
           sThis.setColorsForPmPie();
           EventSystem.Instance.RaiseEvent("OnFilterChange", sThis.Filter)});
           
@@ -796,9 +801,8 @@ class Filter
     
       let dim = {width: 50, height: 50};
       let height = 220;
-      let centerX = this.div.clientWidth /2 ;
       let boxWidth = 2 * dim.width;
-      let pos = {x: centerX - (boxWidth /2), y: (height)};
+      let pos = {x: -(boxWidth /2), y: (height)};
       let gridData = this.generateGridData(1, 2, pos, dim);
       for (let i = 0; i <2;i++){
           let TimeData = gridData[i];
@@ -808,7 +812,7 @@ class Filter
       //let sThis = this;
 
       //non clickable Buttons for AM PM 
-      let timeGroup = this.svg.append("g");
+      let timeGroup = this.MainGroup.append("g");
       let column = timeGroup.selectAll(".square")
           .data(gridData)
           .enter().append("rect")
@@ -844,7 +848,7 @@ class Filter
 
     handleAmFilterChanges(d)
     {
-        //console.log(d.day.label);
+      //console.log(d.day.label);
       let hourName = d.data.label;
 
       // Find the filter we clicked on.
@@ -863,8 +867,18 @@ class Filter
           numInactive++;
         }
       }
+
+      // Check the PM filters as well
+      for (let i = 0; i < this.Filter.PmHours.length; i++)
+      {
+        let checkingFilter = this.Filter.PmHours[i];
+        if (!checkingFilter.active)
+        {
+          numInactive++;
+        }
+      }
   
-  
+      let checkPmFilters = true;
       for (let i = 0; i < this.Filter.AmHours.length; i++)
       {
         let checkingFilter = this.Filter.AmHours[i];
@@ -875,9 +889,30 @@ class Filter
           clickedFilter.active = !clickedFilter.active;
           if (!clickedFilter.active)
           {
-            numInactive++;
+            numInactive++; // We toggled one filter off, so increment numInactive if we did.
           }
+
+          checkPmFilters = false;
           break;
+        }
+      }
+
+      if (checkPmFilters) // Didn't find an inactive filter in the AM pie, look for one in the PM pie.
+      {
+        for (let i = 0; i < this.Filter.PmHours.length; i++)
+        {
+          let checkingFilter = this.Filter.PmHours[i];
+          let filterActive = checkingFilter.active;
+
+          if (!filterActive)
+          {
+            clickedFilter.active = !clickedFilter.active;
+            if (!clickedFilter.active)
+            {
+              numInactive++; // We toggled one filter off, so increment numInactive if we did.
+            }
+            break;
+          }
         }
       }
 
@@ -891,12 +926,24 @@ class Filter
             checkingFilter.active = false;
           }
         }
+
+        for (let i = 0; i < this.Filter.PmHours.length; i++)
+        {
+          let checkingFilter = this.Filter.PmHours[i];
+          checkingFilter.active = false;
+        }
       }
-      else if (numInactive == this.Filter.AmHours.length) // All off, toggle everything on.
+      else if (numInactive == this.Filter.AmHours.length + this.Filter.PmHours.length) // All off, toggle everything on.
       {
         for (let i = 0; i < this.Filter.AmHours.length; i++)
         {
           let checkingFilter = this.Filter.AmHours[i];
+          checkingFilter.active = true;
+        }
+
+        for (let i = 0; i < this.Filter.PmHours.length; i++)
+        {
+          let checkingFilter = this.Filter.PmHours[i];
           checkingFilter.active = true;
         }
       }
@@ -928,7 +975,7 @@ class Filter
 
     handlePmFilterChanges(d)
     {
-        //console.log(d.day.label);
+      //console.log(d.day.label);
       let hourName = d.data.label;
 
       // Find the filter we clicked on.
@@ -936,7 +983,7 @@ class Filter
       let numInactive = 0;
       for (let i = 0; i < this.Filter.PmHours.length; i++)
       {
-        let checkingFilter = this.Filter.AmHours[i];
+        let checkingFilter = this.Filter.PmHours[i];
         if (checkingFilter.label === hourName)
         {
           clickedFilter = checkingFilter;
@@ -948,6 +995,17 @@ class Filter
         }
       }
 
+      // Check the PM filters as well
+      for (let i = 0; i < this.Filter.AmHours.length; i++)
+      {
+        let checkingFilter = this.Filter.AmHours[i];
+        if (!checkingFilter.active)
+        {
+          numInactive++;
+        }
+      }
+  
+      let checkAmFilters = true;
       for (let i = 0; i < this.Filter.PmHours.length; i++)
       {
         let checkingFilter = this.Filter.PmHours[i];
@@ -958,9 +1016,30 @@ class Filter
           clickedFilter.active = !clickedFilter.active;
           if (!clickedFilter.active)
           {
-            numInactive++;
+            numInactive++; // We toggled one filter off, so increment numInactive if we did.
           }
+
+          checkAmFilters = false;
           break;
+        }
+      }
+
+      if (checkAmFilters) // Didn't find an inactive filter in the PM pie, look for one in the AM pie.
+      {
+        for (let i = 0; i < this.Filter.AmHours.length; i++)
+        {
+          let checkingFilter = this.Filter.AmHours[i];
+          let filterActive = checkingFilter.active;
+
+          if (!filterActive)
+          {
+            clickedFilter.active = !clickedFilter.active;
+            if (!clickedFilter.active)
+            {
+              numInactive++; // We toggled one filter off, so increment numInactive if we did.
+            }
+            break;
+          }
         }
       }
 
@@ -974,12 +1053,24 @@ class Filter
             checkingFilter.active = false;
           }
         }
+
+        for (let i = 0; i < this.Filter.AmHours.length; i++)
+        {
+          let checkingFilter = this.Filter.AmHours[i];
+          checkingFilter.active = false;
+        }
       }
-      else if (numInactive == this.Filter.PmHours.length) // All off, toggle everything on.
+      else if (numInactive == this.Filter.AmHours.length + this.Filter.PmHours.length) // All off, toggle everything on.
       {
         for (let i = 0; i < this.Filter.PmHours.length; i++)
         {
           let checkingFilter = this.Filter.PmHours[i];
+          checkingFilter.active = true;
+        }
+
+        for (let i = 0; i < this.Filter.AmHours.length; i++)
+        {
+          let checkingFilter = this.Filter.AmHours[i];
           checkingFilter.active = true;
         }
       }
@@ -992,7 +1083,7 @@ class Filter
       	let label = d.data.label;
         for (let i = 0; i < sThis.Filter.PmHours.length; i++)
         {
-        	let checkingFilter = sThis.Filter.AmHours[i];
+        	let checkingFilter = sThis.Filter.PmHours[i];
           if (checkingFilter.label == label)
           {
           	if (checkingFilter.active)
