@@ -8,7 +8,12 @@ class Filter
       this.div = div;
       this.pieGroupAm = null;
       this.pieGroupPm = null;
-      
+      this.CountiesArray = ["Select County..."];
+      let countyList = FatalityData.Instance.CountyList;
+      for (let i = 0; i < countyList.length; i++)
+      {
+        this.CountiesArray.push(countyList[i]);
+      }
       
 			this.DaysArray = [
           {label: "MON" },
@@ -152,7 +157,9 @@ class Filter
             {label: "61-70", active: true, min: 61, max: 70},
             {label: "71-80", active: true, min: 71, max: 80},
             {label: "81-90", active: true, min: 81, max: 90},
-            {label: "90+", active: true, min: 91, max: 200}, ]
+            {label: "90+", active: true, min: 91, max: 200}, ],
+
+          County: "Select County..."
        };
       
       this.MainGroup = this.svg.append('g').attr("transform", this.translateString(this.div.clientWidth / 2, 0));
@@ -173,6 +180,10 @@ class Filter
 
       this.AgeLabelButtons = null;
       drawHeight = this.buildAgeLabelGrid(drawHeight);
+
+      this.CountyDropDown = null;
+      this.CountyWidth = 125;
+      drawHeight = this.buildCountySelect(drawHeight);
       
       EventSystem.Instance.AddListener("OnWindowResize", this, this.handleResize);
     }
@@ -182,6 +193,7 @@ class Filter
       let center = this.div.clientWidth / 2;
 
       this.MainGroup.attr("transform", this.translateString(center, 0));
+      this.CountyDropDown.style("left", (this.div.clientWidth / 2) - (this.CountyWidth / 2) + "px")
     }
 
     translateString(x, y)
@@ -521,12 +533,7 @@ class Filter
           .attr("font-size", "13.5px")
           .attr("fill", "white")
           .style("user-select", "none")
-          .style("pointer-events", "none")
-          .on('click', function(d){
-            sThis.handleAgeFilterChanges(d);
-            sThis.setColorsForAgeButtons();
-            EventSystem.Instance.RaiseEvent("onFilterChange". sThis.Filter);
-          });
+          .style("pointer-events", "none");
 
           return drawHeight + topPadding + dim.height + bottomPadding;
     }
@@ -662,6 +669,27 @@ class Filter
           .style("pointer-events", "none")
         
         return drawHeight + topPadding + dim.height + bottomPadding;
+    }
+
+    buildCountySelect(drawHeight)
+    {
+      let sThis = this;
+      this.CountyDropDown = d3.select(this.div).append("select")
+        .style("position", "absolute")
+        .style("width", this.CountyWidth + "px")
+        .style("top", (drawHeight) + "px")
+        .style("left", (this.div.clientWidth / 2) - (this.CountyWidth / 2) + "px")
+        
+        .on("change", function() {
+          sThis.Filter.County = d3.select(this).property("value");
+          EventSystem.Instance.RaiseEvent("OnFilterChange", sThis.Filter);
+        });
+      
+      let selectOptions = this.CountyDropDown.selectAll("option")
+        .data(this.CountiesArray).enter()
+        .append("option")
+        .attr("value", function(d) {return d;})
+        .text(function(d) {return d;});
     }
     
     // pos should be {x: #, y: #}, dimensions: {width: #, height: #}
